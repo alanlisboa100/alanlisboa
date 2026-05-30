@@ -49,6 +49,15 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           />
         )}
 
+        {message.inputDocName && (
+          <View style={styles.docChip}>
+            <Text style={styles.docChipIcon}>📄</Text>
+            <Text style={styles.docChipText} numberOfLines={1}>
+              {message.inputDocName}
+            </Text>
+          </View>
+        )}
+
         {message.pending ? (
           <View style={styles.pendingRow}>
             <ActivityIndicator color={theme.colors.textDim} size="small" />
@@ -134,6 +143,20 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.md,
     marginBottom: 8,
   },
+  docChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 8,
+    maxWidth: 220,
+  },
+  docChipIcon: { fontSize: 14 },
+  docChipText: { color: "#fff", fontSize: 12, fontWeight: "700", flexShrink: 1 },
   resultImage: {
     width: 256,
     height: 256,

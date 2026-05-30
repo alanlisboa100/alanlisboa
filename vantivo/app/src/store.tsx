@@ -145,6 +145,10 @@ export interface SendParams {
   imageUri?: string;
   /** Base64 data URI sent to the server (optional attachment). */
   imageDataUri?: string;
+  /** Extracted text of an attached PDF (to chat about / edit a document). */
+  docText?: string;
+  /** Display name of the attached PDF. */
+  docName?: string;
 }
 
 interface VantivoContextValue {
@@ -230,13 +234,17 @@ export function VantivoProvider({ children }: { children: React.ReactNode }) {
     const tabBefore = stateRef.current.tabs.find((t) => t.id === tabId);
     if (!tabBefore) return;
 
-    const { mode, text, quality, imageUri, imageDataUri } = params;
+    const { mode, text, quality, imageUri, imageDataUri, docText, docName } =
+      params;
     const trimmed = text.trim();
 
     // Build the user-facing message text.
     let userText = trimmed;
     if (!userText && mode === "chat" && imageUri) {
       userText = "What's in this photo?";
+    }
+    if (!userText && docText) {
+      userText = "Resuma os pontos principais deste documento.";
     }
 
     const userMessage: ChatMessage = {
@@ -245,6 +253,7 @@ export function VantivoProvider({ children }: { children: React.ReactNode }) {
       kind: "text",
       text: userText || "(no text)",
       inputImageUri: imageUri,
+      inputDocName: docName,
       createdAt: Date.now(),
     };
     dispatch({ type: "ADD_MESSAGE", tabId, message: userMessage });
@@ -302,6 +311,24 @@ export function VantivoProvider({ children }: { children: React.ReactNode }) {
           imageDataUri,
           history,
         );
+        dispatch({
+          type: "UPDATE_MESSAGE",
+          tabId,
+          messageId: assistantId,
+          patch: { pending: false, kind: "text", text: reply },
+        });
+      } else if (docText) {
+        // chat mode WITH a PDF -> read/answer about the document
+        const history = buildHistory(tabBefore);
+        const docPrompt =
+          `The user attached a PDF named "${docName ?? "document.pdf"}". ` +
+          `Use its content below to answer.\n\n` +
+          `=== DOCUMENT START ===\n${docText}\n=== DOCUMENT END ===\n\n` +
+          `Request: ${userText}`;
+        const reply = await api.chat([
+          ...history,
+          { role: "user", content: docPrompt },
+        ]);
         dispatch({
           type: "UPDATE_MESSAGE",
           tabId,

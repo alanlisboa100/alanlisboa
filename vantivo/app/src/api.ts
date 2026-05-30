@@ -90,4 +90,15 @@ export const api = {
     });
     return data.images || [];
   },
+
+  async readPdf(
+    base64: string,
+  ): Promise<{ text: string; pages: number; truncated: boolean; title?: string }> {
+    return postJson(ENV.pdfReadUrl, { base64 });
+  },
+
+  async mergePdfs(files: string[]): Promise<string> {
+    const data = await postJson<{ pdf: string }>(ENV.pdfMergeUrl, { files });
+    return data.pdf;
+  },
 };

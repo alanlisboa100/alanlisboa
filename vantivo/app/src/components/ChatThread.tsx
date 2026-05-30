@@ -10,16 +10,16 @@ function EmptyState() {
     <View style={styles.empty}>
       <Text style={styles.emptyTitle}>How can I help right now?</Text>
       <Text style={styles.emptyBody}>
-        Chat, generate or edit images in 1K, read a photo you send, or turn an
-        answer into a PDF — all in this tab. Open a new tab for a different
-        subject.
+        Chat, generate or edit images in 1K, read a photo or a PDF you send, or
+        turn an answer into a PDF — all in this tab. Open a new tab for a
+        different subject.
       </Text>
       <View style={styles.tips}>
         <Text style={styles.tip}>💬  Ask anything</Text>
         <Text style={styles.tip}>🖼️  Switch to Image and describe a picture</Text>
         <Text style={styles.tip}>✏️  Attach a photo + Edit to transform it</Text>
-        <Text style={styles.tip}>📄  Tap PDF to export your answer</Text>
-        <Text style={styles.tip}>🔎  Attach a photo in Chat to read it</Text>
+        <Text style={styles.tip}>📄  Attach a PDF to read, summarize or translate it</Text>
+        <Text style={styles.tip}>🗂️  Use ＋ to merge several PDFs into one</Text>
       </View>
     </View>
   );

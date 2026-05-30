@@ -25,13 +25,17 @@ vantivo/
 | 🖼️ **Create images** | **Image** mode → 1K, **Low** or **Medium** quality |
 | ✏️ **Edit images** | Attach a photo + **Edit** mode → describe the change |
 | 📄 **Make PDFs** | Export any answer or a whole conversation to a styled PDF |
+| 📥 **Read PDFs** | Attach a PDF → Vantivo extracts the text so you can ask, summarize or translate it |
+| ✍️ **Edit PDFs** | Summarize / translate / rewrite a PDF, then export the result as a new PDF |
+| 🗂️ **Merge PDFs** | Combine several PDFs into one file and share it |
 | 🗂️ **Up to 10 tabs** | A separate conversation per subject, auto-named & saved |
 | 💾 **Persistent** | All tabs & messages are saved on the device |
 
 Quick tips inside the app:
 - Type `/img a neon city at night` to generate an image from chat.
 - Type `/edit make the sky purple` (with a photo attached) to edit it.
-- Long-press a tab to rename it. Tap **＋** to open a new one.
+- Tap **＋** to attach a **PDF** and read/summarize/translate it, or to **merge** PDFs.
+- Long-press a tab to rename it. Use the **＋** in the tab bar to open a new one.
 
 ---
 
@@ -72,6 +76,10 @@ curl http://localhost:8787/health
 
 > You can swap any model by editing the matching `WAVESPEED_*_URL` in `server/.env`
 > — no code changes needed. Browse models at <https://wavespeed.ai/models>.
+
+The server also exposes two **local** PDF endpoints (no external calls):
+`POST /api/pdf/read` (extracts text via `pdf-parse`) and `POST /api/pdf/merge`
+(combines PDFs via `pdf-lib`).
 
 ---
 

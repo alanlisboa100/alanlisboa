@@ -39,6 +39,11 @@ export const ENV = {
     process.env.EXPO_PUBLIC_IMAGE_EDIT_URL,
     `${apiUrl}/api/image/edit`,
   ),
+  pdfReadUrl: pick(process.env.EXPO_PUBLIC_PDF_READ_URL, `${apiUrl}/api/pdf/read`),
+  pdfMergeUrl: pick(
+    process.env.EXPO_PUBLIC_PDF_MERGE_URL,
+    `${apiUrl}/api/pdf/merge`,
+  ),
 
   maxTabs: Math.min(pickInt(process.env.EXPO_PUBLIC_VANTIVO_MAX_TABS, 10), 10),
   chatModel: pick(process.env.EXPO_PUBLIC_CHAT_MODEL, "openai/gpt-4o-mini"),

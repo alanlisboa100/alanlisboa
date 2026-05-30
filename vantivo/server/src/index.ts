@@ -8,6 +8,7 @@ import {
   WaveSpeedError,
   type ChatMessage,
 } from "./wavespeed.js";
+import { extractPdfText, mergePdfs } from "./pdf.js";
 
 const app = express();
 app.use(cors());
@@ -144,6 +145,53 @@ app.post(
     }
   },
 );
+
+// --- PDF: read (extract text so the model can answer about it) --------------
+app.post("/api/pdf/read", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const input: string | undefined =
+      req.body?.dataUri || req.body?.base64 || req.body?.pdf;
+    if (!input) {
+      throw new WaveSpeedError(
+        "pdf read requires 'dataUri' (or 'base64')",
+        400,
+      );
+    }
+    const maxChars = Number(req.body?.maxChars) || 14000;
+    const result = await extractPdfText(input, maxChars);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof WaveSpeedError) return next(err);
+    next(
+      new WaveSpeedError(
+        "Could not read this PDF. It may be scanned (image-only) or corrupted.",
+        422,
+        err instanceof Error ? err.message : err,
+      ),
+    );
+  }
+});
+
+// --- PDF: merge several files into one --------------------------------------
+app.post("/api/pdf/merge", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const files: string[] = Array.isArray(req.body?.files) ? req.body.files : [];
+    if (files.length < 2) {
+      throw new WaveSpeedError("pdf merge requires at least 2 files", 400);
+    }
+    const pdf = await mergePdfs(files);
+    res.json({ pdf });
+  } catch (err) {
+    if (err instanceof WaveSpeedError) return next(err);
+    next(
+      new WaveSpeedError(
+        "Could not merge these PDFs. Make sure every file is a valid PDF.",
+        422,
+        err instanceof Error ? err.message : err,
+      ),
+    );
+  }
+});
 
 // --- Error handler -----------------------------------------------------------
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
