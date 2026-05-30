@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { api } from "../api";
-import { ENV } from "../env";
 import { useVantivo } from "../store";
 import { theme } from "../theme";
 import type { ComposerMode, Quality } from "../types";
@@ -33,31 +32,37 @@ const MODES: { key: ComposerMode; label: string }[] = [
   { key: "edit", label: "Edit" },
 ];
 
-interface DocState {
-  name: string;
-  text: string;
-  truncated: boolean;
-}
-
 const DOC_ACTIONS: { label: string; prompt: string }[] = [
   { label: "Resumir", prompt: "Resuma este documento em tópicos claros e objetivos." },
   { label: "Traduzir", prompt: "Traduza este documento para português, mantendo a formatação." },
   { label: "Reescrever", prompt: "Reescreva este documento de forma mais clara e profissional." },
 ];
 
+/** Conservative heuristic: did the user ask to *create an image* in chat mode? */
+function isImageIntent(t: string): boolean {
+  const s = t.trim().toLowerCase();
+  if (!s) return false;
+  const pt =
+    /^(crie|cria|criar|gere|gera|gerar|desenh\w*|faça|faz|fazer|monte|ilustre|imagine)\b.*\b(imagem|imagens|figura|foto|desenho|logo|logotipo|arte|wallpaper|ilustração|capa|pôster|poster)\b/;
+  const en =
+    /^(generate|create|draw|make|design|render)\b.*\b(image|picture|logo|illustration|art|drawing|photo|poster|wallpaper)\b/;
+  return pt.test(s) || en.test(s);
+}
+
 export function Composer() {
-  const { send } = useVantivo();
+  const { send, activeTab, pinDoc, unpinDoc } = useVantivo();
+  const pinnedDoc = activeTab.pinnedDoc;
+
   const [mode, setMode] = React.useState<ComposerMode>("chat");
-  const [quality, setQuality] = React.useState<Quality>(ENV.defaultQuality);
+  const [quality, setQuality] = React.useState<Quality>("low");
   const [text, setText] = React.useState("");
   const [attachment, setAttachment] = React.useState<PickedImage | null>(null);
-  const [doc, setDoc] = React.useState<DocState | null>(null);
   const [docLoading, setDocLoading] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [merging, setMerging] = React.useState(false);
 
-  const showQuality = (mode === "image" || mode === "edit") && !doc;
+  const showQuality = mode === "image" || mode === "edit";
 
   const attachImage = async (fromCamera: boolean) => {
     setMenuOpen(false);
@@ -65,10 +70,7 @@ export function Composer() {
       const picked = fromCamera
         ? await captureFromCamera()
         : await pickFromLibrary();
-      if (picked) {
-        setDoc(null);
-        setAttachment(picked);
-      }
+      if (picked) setAttachment(picked);
     } catch (e: any) {
       Alert.alert("Photo", e?.message || "Could not load the photo.");
     }
@@ -88,10 +90,9 @@ export function Composer() {
           "PDF sem texto",
           "Não consegui extrair texto. O PDF pode ser escaneado (somente imagem).",
         );
-        setDocLoading(false);
         return;
       }
-      setDoc({ name: picked.name, text: read.text, truncated: read.truncated });
+      pinDoc({ name: picked.name, text: read.text, truncated: read.truncated });
     } catch (e: any) {
       Alert.alert("PDF", e?.message || "Could not read the PDF.");
     } finally {
@@ -118,9 +119,7 @@ export function Composer() {
     }
   };
 
-  const resolveSlashMode = (
-    raw: string,
-  ): { mode: ComposerMode; text: string } => {
+  const resolveSlashMode = (raw: string): { mode: ComposerMode; text: string } => {
     const t = raw.trim();
     if (/^\/img(age)?\b/i.test(t)) {
       return { mode: "image", text: t.replace(/^\/img(age)?\s*/i, "") };
@@ -134,28 +133,17 @@ export function Composer() {
   const onSend = async () => {
     if (sending || docLoading) return;
 
-    // A PDF attachment always means "chat about the document".
-    if (doc) {
-      const cleanText = text.trim();
-      setSending(true);
-      const payload = {
-        mode: "chat" as ComposerMode,
-        text: cleanText,
-        quality,
-        docText: doc.text,
-        docName: doc.name,
-      };
-      setText("");
-      setDoc(null);
-      try {
-        await send(payload);
-      } finally {
-        setSending(false);
-      }
-      return;
-    }
+    let { mode: effectiveMode, text: cleanText } = resolveSlashMode(text);
 
-    const { mode: effectiveMode, text: cleanText } = resolveSlashMode(text);
+    // Auto image-intent detection (only in plain chat, no attachment/doc).
+    if (
+      effectiveMode === "chat" &&
+      !attachment &&
+      !pinnedDoc &&
+      isImageIntent(cleanText)
+    ) {
+      effectiveMode = "image";
+    }
 
     if (effectiveMode === "image" && !cleanText) {
       Alert.alert("Describe the image", "Type what you want to generate.");
@@ -171,7 +159,7 @@ export function Composer() {
         return;
       }
     }
-    if (effectiveMode === "chat" && !cleanText && !attachment) {
+    if (effectiveMode === "chat" && !cleanText && !attachment && !pinnedDoc) {
       return;
     }
 
@@ -233,8 +221,31 @@ export function Composer() {
         )}
       </View>
 
-      {/* quick actions when a PDF is attached */}
-      {doc && (
+      {/* pinned document memory */}
+      {(pinnedDoc || docLoading) && (
+        <View style={styles.attachRow}>
+          <Text style={styles.docIcon}>📄</Text>
+          {docLoading ? (
+            <View style={styles.docLoadingRow}>
+              <ActivityIndicator color={theme.colors.textDim} size="small" />
+              <Text style={styles.attachLabel}>Reading PDF…</Text>
+            </View>
+          ) : (
+            <Text style={styles.attachLabel} numberOfLines={1}>
+              {pinnedDoc?.name}
+              {pinnedDoc?.truncated ? "  (long — first pages)" : ""}
+            </Text>
+          )}
+          {pinnedDoc && (
+            <TouchableOpacity onPress={unpinDoc} style={styles.attachRemove}>
+              <Text style={styles.attachRemoveText}>Remove</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* quick actions when a PDF is pinned */}
+      {pinnedDoc && (
         <View style={styles.docActions}>
           {DOC_ACTIONS.map((a) => (
             <TouchableOpacity
@@ -264,32 +275,6 @@ export function Composer() {
         </View>
       )}
 
-      {/* pdf attachment preview */}
-      {(doc || docLoading) && (
-        <View style={styles.attachRow}>
-          <Text style={styles.docIcon}>📄</Text>
-          {docLoading ? (
-            <View style={styles.docLoadingRow}>
-              <ActivityIndicator color={theme.colors.textDim} size="small" />
-              <Text style={styles.attachLabel}>Reading PDF…</Text>
-            </View>
-          ) : (
-            <Text style={styles.attachLabel} numberOfLines={1}>
-              {doc?.name}
-              {doc?.truncated ? "  (long — using first pages)" : ""}
-            </Text>
-          )}
-          {doc && (
-            <TouchableOpacity
-              onPress={() => setDoc(null)}
-              style={styles.attachRemove}
-            >
-              <Text style={styles.attachRemoveText}>Remove</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
       {/* input bar */}
       <View style={styles.inputRow}>
         <TouchableOpacity
@@ -309,7 +294,7 @@ export function Composer() {
           value={text}
           onChangeText={setText}
           placeholder={
-            doc
+            pinnedDoc
               ? "Ask about the PDF, or pick an action above…"
               : mode === "image"
                 ? "Describe an image to create…"

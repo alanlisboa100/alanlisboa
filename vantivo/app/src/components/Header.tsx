@@ -12,7 +12,7 @@ import { useVantivo } from "../store";
 import { theme } from "../theme";
 
 export function Header() {
-  const { activeTab, clearTab } = useVantivo();
+  const { activeTab, clearTab, brain, setBrain } = useVantivo();
   const [exporting, setExporting] = React.useState(false);
 
   const onExport = async () => {
@@ -51,6 +51,31 @@ export function Header() {
         </View>
       </View>
       <View style={styles.actions}>
+        <View style={styles.brainToggle}>
+          <TouchableOpacity
+            onPress={() => setBrain("eco")}
+            style={[styles.brainSeg, brain === "eco" && styles.brainSegActive]}
+          >
+            <Text
+              style={[styles.brainText, brain === "eco" && styles.brainTextActive]}
+            >
+              Eco
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setBrain("forte")}
+            style={[styles.brainSeg, brain === "forte" && styles.brainSegActive]}
+          >
+            <Text
+              style={[
+                styles.brainText,
+                brain === "forte" && styles.brainTextActive,
+              ]}
+            >
+              Forte
+            </Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={onExport}
@@ -93,7 +118,25 @@ const styles = StyleSheet.create({
   },
   title: { color: theme.colors.text, fontSize: 20, fontWeight: "800" },
   subtitle: { color: theme.colors.textFaint, fontSize: 11, marginTop: 1 },
-  actions: { flexDirection: "row", gap: 8 },
+  actions: { flexDirection: "row", gap: 6, alignItems: "center" },
+  brainToggle: {
+    flexDirection: "row",
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 2,
+  },
+  brainSeg: {
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brainSegActive: { backgroundColor: theme.colors.primary },
+  brainText: { color: theme.colors.textDim, fontWeight: "700", fontSize: 11 },
+  brainTextActive: { color: "#fff" },
   iconBtn: {
     paddingHorizontal: 12,
     height: 34,
@@ -103,7 +146,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 48,
+    minWidth: 44,
   },
   iconText: { color: theme.colors.text, fontWeight: "700", fontSize: 12 },
 });

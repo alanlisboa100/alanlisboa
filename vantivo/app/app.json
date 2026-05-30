@@ -17,6 +17,7 @@
       "bundleIdentifier": "ai.vantivo.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Vantivo needs access to your photos so you can send and edit images in chat.",
+        "NSPhotoLibraryAddUsageDescription": "Vantivo needs permission to save generated images to your photo library.",
         "NSCameraUsageDescription": "Vantivo needs camera access so you can capture photos to chat about or edit."
       }
     },

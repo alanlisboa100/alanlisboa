@@ -49,10 +49,10 @@ async function postJson<T>(
 }
 
 export const api = {
-  async chat(messages: ApiChatMessage[]): Promise<string> {
+  async chat(messages: ApiChatMessage[], model?: string): Promise<string> {
     const data = await postJson<{ content: string }>(ENV.chatUrl, {
       messages,
-      model: ENV.chatModel,
+      model: model || ENV.chatModel,
     });
     return data.content?.trim() || "(empty response)";
   },
@@ -61,11 +61,13 @@ export const api = {
     prompt: string,
     imageDataUri: string,
     history: ApiChatMessage[] = [],
+    model?: string,
   ): Promise<string> {
     const data = await postJson<{ content: string }>(ENV.visionUrl, {
       prompt,
       imageUrl: imageDataUri,
       messages: history,
+      model,
     });
     return data.content?.trim() || "(empty response)";
   },

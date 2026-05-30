@@ -47,6 +47,10 @@ export const ENV = {
 
   maxTabs: Math.min(pickInt(process.env.EXPO_PUBLIC_VANTIVO_MAX_TABS, 10), 10),
   chatModel: pick(process.env.EXPO_PUBLIC_CHAT_MODEL, "openai/gpt-4o-mini"),
+  chatModelForte: pick(
+    process.env.EXPO_PUBLIC_CHAT_MODEL_FORTE,
+    "openai/gpt-5.4-mini",
+  ),
   defaultQuality: (pick(process.env.EXPO_PUBLIC_IMAGE_QUALITY_DEFAULT, "low") ===
   "medium"
     ? "medium"

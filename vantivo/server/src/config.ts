@@ -28,27 +28,20 @@ export const config = {
     "WAVESPEED_CHAT_URL",
     "https://llm.wavespeed.ai/v1/chat/completions",
   ),
+  // "Econômico" default; the app can request the "Forte" model per message.
   chatModel: env("WAVESPEED_CHAT_MODEL", "openai/gpt-4o-mini"),
   visionModel: env("WAVESPEED_VISION_MODEL", "openai/gpt-4o-mini"),
 
-  // ---- Image generation (1K) — low + medium quality presets -----------------
-  imageGenerateLowUrl: env(
-    "WAVESPEED_IMAGE_GENERATE_LOW_URL",
-    "https://api.wavespeed.ai/api/v3/wavespeed-ai/z-image/turbo",
+  // ---- Images: GPT Image 2 (generate) + Seedream V4 (edit) ------------------
+  // GPT Image 2 has native quality tiers (low / medium / high) for generation.
+  // Seedream V4 Edit is a strong, affordable editor (outperforms Nano Banana).
+  imageGenerateUrl: env(
+    "WAVESPEED_IMAGE_GENERATE_URL",
+    "https://api.wavespeed.ai/api/v3/openai/gpt-image-2/text-to-image",
   ),
-  imageGenerateMediumUrl: env(
-    "WAVESPEED_IMAGE_GENERATE_MEDIUM_URL",
-    "https://api.wavespeed.ai/api/v3/google/nano-banana-pro",
-  ),
-
-  // ---- Image editing (1K) — low + medium quality presets --------------------
-  imageEditLowUrl: env(
-    "WAVESPEED_IMAGE_EDIT_LOW_URL",
-    "https://api.wavespeed.ai/api/v3/wavespeed-ai/qwen-image/edit",
-  ),
-  imageEditMediumUrl: env(
-    "WAVESPEED_IMAGE_EDIT_MEDIUM_URL",
-    "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/edit",
+  imageEditUrl: env(
+    "WAVESPEED_IMAGE_EDIT_URL",
+    "https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit",
   ),
 
   // ---- Predictions polling endpoint -----------------------------------------
@@ -59,8 +52,8 @@ export const config = {
   ),
 
   // ---- Image defaults -------------------------------------------------------
-  // WaveSpeed image models commonly accept a "WIDTH*HEIGHT" size string.
-  imageSize1k: env("WAVESPEED_IMAGE_SIZE_1K", "1024*1024"),
+  // GPT Image 2 (OpenAI) uses an "WIDTHxHEIGHT" size string.
+  imageSize1k: env("WAVESPEED_IMAGE_SIZE_1K", "1024x1024"),
 
   // Polling tuning
   pollIntervalMs: Number(env("WAVESPEED_POLL_INTERVAL_MS", "1200")),
@@ -68,15 +61,3 @@ export const config = {
 } as const;
 
 export type Quality = "low" | "medium";
-
-export function imageGenerateUrl(quality: Quality): string {
-  return quality === "medium"
-    ? config.imageGenerateMediumUrl
-    : config.imageGenerateLowUrl;
-}
-
-export function imageEditUrl(quality: Quality): string {
-  return quality === "medium"
-    ? config.imageEditMediumUrl
-    : config.imageEditLowUrl;
-}

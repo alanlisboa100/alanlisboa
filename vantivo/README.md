@@ -20,21 +20,23 @@ vantivo/
 
 | Feature | How |
 | --- | --- |
-| 💬 **Fast chat** | Cheap mini model (`openai/gpt-4o-mini`) via WaveSpeed LLM |
+| 💬 **Fast chat** | **Eco** = cheap mini (`openai/gpt-4o-mini`) · **Forte** = `openai/gpt-5.4-mini` — toggle in the header |
 | 🔎 **Read a photo** | Attach a photo in **Chat** mode → Vantivo describes/answers about it |
-| 🖼️ **Create images** | **Image** mode → 1K, **Low** or **Medium** quality |
-| ✏️ **Edit images** | Attach a photo + **Edit** mode → describe the change |
+| 🖼️ **Create images** | **Image** mode → **GPT Image 2**, 1K **Low** or **Medium** quality |
+| ✏️ **Edit images** | Attach a photo + **Edit** mode → **Seedream V4 Edit**, 1K Low/Medium |
 | 📄 **Make PDFs** | Export any answer or a whole conversation to a styled PDF |
 | 📥 **Read PDFs** | Attach a PDF → Vantivo extracts the text so you can ask, summarize or translate it |
 | ✍️ **Edit PDFs** | Summarize / translate / rewrite a PDF, then export the result as a new PDF |
 | 🗂️ **Merge PDFs** | Combine several PDFs into one file and share it |
 | 🗂️ **Up to 10 tabs** | A separate conversation per subject, auto-named & saved |
-| 💾 **Persistent** | All tabs & messages are saved on the device |
+| 🧠 **Persistent memory** | Tabs, messages **and a pinned PDF per tab** survive app restarts |
+| 📋 **Polish** | Markdown answers, copy, retry, tap-to-zoom images, save to gallery |
 
 Quick tips inside the app:
-- Type `/img a neon city at night` to generate an image from chat.
+- Type `/img a neon city at night` (or just "create an image of…") to generate.
 - Type `/edit make the sky purple` (with a photo attached) to edit it.
-- Tap **＋** to attach a **PDF** and read/summarize/translate it, or to **merge** PDFs.
+- Tap **＋** to attach a **PDF** (it stays pinned to the tab) or to **merge** PDFs.
+- Toggle **Eco / Forte** in the header to switch between cheap and stronger models.
 - Long-press a tab to rename it. Use the **＋** in the tab bar to open a new one.
 
 ---
@@ -67,11 +69,10 @@ curl http://localhost:8787/health
 
 | Purpose | Upstream wavespeed.ai route (default) |
 | --- | --- |
-| Chat + Vision | `https://llm.wavespeed.ai/v1/chat/completions` |
-| Image generate (low) | `…/api/v3/wavespeed-ai/z-image/turbo` |
-| Image generate (medium) | `…/api/v3/google/nano-banana-pro` |
-| Image edit (low) | `…/api/v3/wavespeed-ai/qwen-image/edit` |
-| Image edit (medium) | `…/api/v3/google/nano-banana-pro/edit` |
+| Chat + Vision (Eco) | `https://llm.wavespeed.ai/v1/chat/completions` · `openai/gpt-4o-mini` |
+| Chat + Vision (Forte) | same endpoint · `openai/gpt-5.4-mini` |
+| Image generate (low/medium) | `…/api/v3/openai/gpt-image-2/text-to-image` (quality in body) |
+| Image edit (low/medium) | `…/api/v3/bytedance/seedream-v4/edit` |
 | Predictions poll | `…/api/v3/predictions/{id}/result` |
 
 > You can swap any model by editing the matching `WAVESPEED_*_URL` in `server/.env`

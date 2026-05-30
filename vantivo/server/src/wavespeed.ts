@@ -1,9 +1,4 @@
-import {
-  config,
-  imageEditUrl,
-  imageGenerateUrl,
-  type Quality,
-} from "./config.js";
+import { config, type Quality } from "./config.js";
 
 /** Minimal shape of an OpenAI-style chat message. */
 export interface ChatMessage {
@@ -177,8 +172,9 @@ export async function generateImage(opts: {
   quality: Quality;
   size?: string;
 }): Promise<{ outputs: string[]; raw: unknown }> {
-  return runPrediction(imageGenerateUrl(opts.quality), {
+  return runPrediction(config.imageGenerateUrl, {
     prompt: opts.prompt,
+    quality: opts.quality,
     size: opts.size || config.imageSize1k,
     enable_base64_output: false,
   });
@@ -190,9 +186,10 @@ export async function editImage(opts: {
   quality: Quality;
   size?: string;
 }): Promise<{ outputs: string[]; raw: unknown }> {
-  return runPrediction(imageEditUrl(opts.quality), {
+  return runPrediction(config.imageEditUrl, {
     prompt: opts.prompt,
     images: opts.images,
+    quality: opts.quality,
     size: opts.size || config.imageSize1k,
     enable_base64_output: false,
   });
