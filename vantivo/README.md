@@ -125,9 +125,11 @@ Restart `expo start` after editing `.env` (env vars are inlined at build time).
 
 ## 🧱 Tech
 
-- **App:** Expo SDK 52, React Native, TypeScript, AsyncStorage, expo-image-picker,
-  expo-print, expo-sharing.
-- **Server:** Node 18+, Express, TypeScript (ESM).
+- **App:** Expo SDK 52, React Native, TypeScript. UI uses a premium ChatGPT-style
+  dark theme with `expo-linear-gradient` accents.
+  Modules: AsyncStorage, expo-image-picker, expo-document-picker, expo-file-system,
+  expo-print, expo-sharing, expo-clipboard, expo-media-library.
+- **Server:** Node 18+, Express, TypeScript (ESM), pdf-parse, pdf-lib.
 
 ---
 

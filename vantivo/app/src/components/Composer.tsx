@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { api } from "../api";
 import { useVantivo } from "../store";
 import { theme } from "../theme";
@@ -276,16 +277,16 @@ export function Composer() {
       )}
 
       {/* input bar */}
-      <View style={styles.inputRow}>
+      <View style={styles.inputShell}>
         <TouchableOpacity
-          style={styles.iconBtn}
+          style={styles.attachBtn}
           onPress={() => setMenuOpen(true)}
           disabled={merging}
         >
           {merging ? (
-            <ActivityIndicator color={theme.colors.text} size="small" />
+            <ActivityIndicator color={theme.colors.textDim} size="small" />
           ) : (
-            <Text style={styles.iconBtnText}>＋</Text>
+            <Text style={styles.attachBtnText}>＋</Text>
           )}
         </TouchableOpacity>
 
@@ -308,15 +309,22 @@ export function Composer() {
         />
 
         <TouchableOpacity
-          style={[styles.sendBtn, (sending || docLoading) && styles.sendBtnDisabled]}
           onPress={onSend}
           disabled={sending || docLoading}
+          activeOpacity={0.85}
         >
-          {sending ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.sendText}>↑</Text>
-          )}
+          <LinearGradient
+            colors={theme.gradient.brand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.sendBtn, (sending || docLoading) && styles.sendBtnDisabled]}
+          >
+            {sending ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.sendText}>↑</Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </View>
 
@@ -439,42 +447,44 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceAlt,
   },
   attachRemoveText: { color: theme.colors.danger, fontSize: 12, fontWeight: "700" },
-  inputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
-  iconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.radius.pill,
+  inputShell: {
+    flexDirection: "row",
+    alignItems: "flex-end",
     backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  attachBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
-  iconBtnText: { color: theme.colors.text, fontSize: 18 },
+  attachBtnText: { color: theme.colors.textDim, fontSize: 22, lineHeight: 24 },
   input: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 36,
     maxHeight: 130,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
     color: theme.colors.text,
-    fontSize: 15,
+    fontSize: 15.5,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
+    width: 38,
+    height: 38,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  sendBtnDisabled: { opacity: 0.6 },
-  sendText: { color: "#fff", fontSize: 20, fontWeight: "800" },
+  sendBtnDisabled: { opacity: 0.5 },
+  sendText: { color: "#fff", fontSize: 20, fontWeight: "800", marginTop: -1 },
   menuBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",

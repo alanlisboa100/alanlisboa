@@ -1,8 +1,11 @@
 import * as Clipboard from "expo-clipboard";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   Image,
   Modal,
   StyleSheet,
@@ -18,7 +21,59 @@ import { saveImageToGallery } from "../utils/image";
 import { Markdown } from "./Markdown";
 
 function pendingLabel(kind: ChatMessage["kind"]): string {
-  return kind === "image" ? "Creating image…" : "Thinking…";
+  return kind === "image" ? "Creating image" : "Thinking";
+}
+
+function TypingDots() {
+  const v = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(v, {
+        toValue: 1,
+        duration: 1100,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [v]);
+
+  const dot = (start: number) => ({
+    opacity: v.interpolate({
+      inputRange: [0, start, start + 0.15, start + 0.3, 1],
+      outputRange: [0.25, 0.25, 1, 0.25, 0.25],
+    }),
+    transform: [
+      {
+        translateY: v.interpolate({
+          inputRange: [0, start, start + 0.15, start + 0.3, 1],
+          outputRange: [0, 0, -3, 0, 0],
+        }),
+      },
+    ],
+  });
+
+  return (
+    <View style={styles.dots}>
+      <Animated.View style={[styles.dot, dot(0)]} />
+      <Animated.View style={[styles.dot, dot(0.2)]} />
+      <Animated.View style={[styles.dot, dot(0.4)]} />
+    </View>
+  );
+}
+
+function Avatar() {
+  return (
+    <LinearGradient
+      colors={theme.gradient.brand}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.avatar}
+    >
+      <Text style={styles.avatarText}>V</Text>
+    </LinearGradient>
+  );
 }
 
 export function MessageBubble({ message }: { message: ChatMessage }) {
@@ -59,46 +114,53 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
   };
 
   const showTextActions =
-    !isUser && message.kind === "text" && message.text.length > 0;
+    message.kind === "text" && message.text.length > 0;
 
+  // ---------------------------------------------------------------- USER ----
+  if (isUser) {
+    return (
+      <View style={styles.userRow}>
+        <View style={styles.userBubble}>
+          {message.inputImageUri && (
+            <Image
+              source={{ uri: message.inputImageUri }}
+              style={styles.inputImage}
+              resizeMode="cover"
+            />
+          )}
+          {message.inputDocName && (
+            <View style={styles.docChip}>
+              <Text style={styles.docChipIcon}>📄</Text>
+              <Text style={styles.docChipText} numberOfLines={1}>
+                {message.inputDocName}
+              </Text>
+            </View>
+          )}
+          {message.text ? (
+            <Text style={styles.userText}>{message.text}</Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
+  // ----------------------------------------------------------- ASSISTANT ----
   return (
-    <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
-      <View
-        style={[
-          styles.bubble,
-          isUser ? styles.userBubble : styles.assistantBubble,
-          message.kind === "error" && styles.errorBubble,
-        ]}
-      >
-        {message.inputImageUri && (
-          <Image
-            source={{ uri: message.inputImageUri }}
-            style={styles.inputImage}
-            resizeMode="cover"
-          />
-        )}
-
-        {message.inputDocName && (
-          <View style={styles.docChip}>
-            <Text style={styles.docChipIcon}>📄</Text>
-            <Text style={styles.docChipText} numberOfLines={1}>
-              {message.inputDocName}
-            </Text>
-          </View>
-        )}
-
+    <View style={styles.assistantRow}>
+      <Avatar />
+      <View style={styles.assistantContent}>
         {message.pending ? (
           <View style={styles.pendingRow}>
-            <ActivityIndicator color={theme.colors.textDim} size="small" />
+            <TypingDots />
             <Text style={styles.pendingText}>{pendingLabel(message.kind)}</Text>
           </View>
         ) : (
           <>
             {message.text ? (
-              isUser ? (
-                <Text style={[styles.text, styles.userText]}>{message.text}</Text>
-              ) : message.kind === "error" ? (
-                <Text style={[styles.text, styles.errorText]}>{message.text}</Text>
+              message.kind === "error" ? (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{message.text}</Text>
+                </View>
               ) : (
                 <Markdown text={message.text} color={theme.colors.text} />
               )
@@ -109,6 +171,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
                 key={url}
                 activeOpacity={0.9}
                 onPress={() => setFullscreen(url)}
+                style={styles.resultWrap}
               >
                 <Image
                   source={{ uri: url }}
@@ -119,14 +182,13 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
               </TouchableOpacity>
             ))}
 
-            {/* action row */}
             {(showTextActions || message.retry) && (
               <View style={styles.actions}>
                 {showTextActions && (
                   <>
                     <TouchableOpacity style={styles.actionBtn} onPress={onCopy}>
                       <Text style={styles.actionText}>
-                        {copied ? "Copied!" : "Copy"}
+                        {copied ? "✓ Copied" : "Copy"}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -135,7 +197,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
                       disabled={exporting}
                     >
                       {exporting ? (
-                        <ActivityIndicator color={theme.colors.primary} size="small" />
+                        <ActivityIndicator color={theme.colors.textDim} size="small" />
                       ) : (
                         <Text style={styles.actionText}>PDF</Text>
                       )}
@@ -197,37 +259,55 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
 }
 
 const styles = StyleSheet.create({
-  row: { width: "100%", marginVertical: 5, paddingHorizontal: 4 },
-  rowUser: { alignItems: "flex-end" },
-  rowAssistant: { alignItems: "flex-start" },
-  bubble: {
-    maxWidth: "88%",
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 14,
+  // user
+  userRow: { width: "100%", alignItems: "flex-end", marginVertical: 6 },
+  userBubble: {
+    maxWidth: "84%",
+    backgroundColor: theme.colors.userBubble,
+    borderRadius: theme.radius.xl,
+    borderBottomRightRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+  },
+  userText: { color: theme.colors.text, fontSize: 15.5, lineHeight: 22 },
+
+  // assistant
+  assistantRow: { width: "100%", flexDirection: "row", marginVertical: 8, paddingRight: 8 },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    marginTop: 1,
+  },
+  avatarText: { color: "#fff", fontWeight: "900", fontSize: 15 },
+  assistantContent: { flex: 1, paddingTop: 2 },
+
+  pendingRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 },
+  pendingText: { color: theme.colors.textDim, fontSize: 14 },
+  dots: { flexDirection: "row", gap: 5, alignItems: "center" },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary,
+  },
+
+  errorBox: {
+    backgroundColor: "rgba(255,107,129,0.10)",
+    borderColor: theme.colors.danger,
+    borderWidth: 1,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  userBubble: {
-    backgroundColor: theme.colors.userBubble,
-    borderBottomRightRadius: 6,
-  },
-  assistantBubble: {
-    backgroundColor: theme.colors.assistantBubble,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderBottomLeftRadius: 6,
-  },
-  errorBubble: {
-    backgroundColor: "rgba(255,107,129,0.12)",
-    borderColor: theme.colors.danger,
-  },
-  text: { fontSize: 15, lineHeight: 21 },
-  userText: { color: "#fff" },
-  errorText: { color: theme.colors.danger },
-  pendingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  pendingText: { color: theme.colors.textDim, fontSize: 14 },
+  errorText: { color: theme.colors.danger, fontSize: 15, lineHeight: 21 },
+
   inputImage: {
-    width: 180,
-    height: 180,
+    width: 190,
+    height: 190,
     borderRadius: theme.radius.md,
     marginBottom: 8,
   },
@@ -236,7 +316,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderRadius: theme.radius.sm,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -244,33 +324,35 @@ const styles = StyleSheet.create({
     maxWidth: 220,
   },
   docChipIcon: { fontSize: 14 },
-  docChipText: { color: "#fff", fontSize: 12, fontWeight: "700", flexShrink: 1 },
+  docChipText: { color: theme.colors.text, fontSize: 12, fontWeight: "700", flexShrink: 1 },
+
+  resultWrap: { marginTop: 8 },
   resultImage: {
-    width: 256,
-    height: 256,
+    width: 264,
+    height: 264,
     borderRadius: theme.radius.md,
-    marginTop: 8,
     backgroundColor: theme.colors.surfaceAlt,
   },
   tapHint: {
     color: theme.colors.textFaint,
     fontSize: 11,
-    marginTop: 4,
-    textAlign: "center",
+    marginTop: 5,
   },
-  actions: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" },
+
+  actions: { flexDirection: "row", gap: 6, marginTop: 10, flexWrap: "wrap" },
   actionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: theme.colors.border,
   },
-  actionText: { color: theme.colors.text, fontWeight: "700", fontSize: 12 },
+  actionText: { color: theme.colors.textDim, fontWeight: "700", fontSize: 12 },
+
   viewerBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.92)",
+    backgroundColor: "rgba(0,0,0,0.94)",
     alignItems: "center",
     justifyContent: "center",
     padding: 16,

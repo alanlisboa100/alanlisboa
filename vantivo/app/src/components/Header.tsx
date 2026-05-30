@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { exportThreadToPdf } from "../pdf";
 import { useVantivo } from "../store";
 import { theme } from "../theme";
@@ -44,10 +45,19 @@ export function Header() {
   return (
     <View style={styles.container}>
       <View style={styles.brandRow}>
-        <View style={styles.logoDot} />
+        <LinearGradient
+          colors={theme.gradient.brand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.logoDot}
+        >
+          <Text style={styles.logoLetter}>V</Text>
+        </LinearGradient>
         <View>
           <Text style={styles.title}>Vantivo</Text>
-          <Text style={styles.subtitle}>chat · vision · images · pdf</Text>
+          <Text style={styles.subtitle}>
+            {brain === "forte" ? "Forte · gpt-5.4-mini" : "Eco · gpt-4o-mini"}
+          </Text>
         </View>
       </View>
       <View style={styles.actions}>
@@ -108,14 +118,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing(4),
     paddingTop: theme.spacing(2),
     paddingBottom: theme.spacing(2),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 9,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     backgroundColor: theme.colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  logoLetter: { color: "#fff", fontWeight: "900", fontSize: 17 },
   title: { color: theme.colors.text, fontSize: 20, fontWeight: "800" },
   subtitle: { color: theme.colors.textFaint, fontSize: 11, marginTop: 1 },
   actions: { flexDirection: "row", gap: 6, alignItems: "center" },

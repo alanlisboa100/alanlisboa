@@ -131,7 +131,7 @@ export function TabBar() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingBottom: 6 },
+  wrap: { paddingTop: 10, paddingBottom: 8 },
   row: {
     paddingHorizontal: theme.spacing(4),
     gap: 8,
@@ -141,11 +141,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
-    height: 36,
+    height: 34,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.borderSoft,
     maxWidth: 180,
   },
   tabActive: {
@@ -157,12 +157,12 @@ const styles = StyleSheet.create({
   closeBtn: { marginLeft: 8 },
   closeText: { color: theme.colors.textDim, fontSize: 18, lineHeight: 18 },
   addBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.borderSoft,
     alignItems: "center",
     justifyContent: "center",
   },

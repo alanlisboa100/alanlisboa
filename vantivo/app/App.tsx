@@ -1,4 +1,5 @@
 import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
   ActivityIndicator,
@@ -49,18 +50,18 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <View style={styles.root}>
+      <LinearGradient colors={["#0E0E16", "#0A0A0F"] as const} style={styles.root}>
         <VantivoProvider>
           <Shell />
         </VantivoProvider>
-      </View>
+      </LinearGradient>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.colors.bg },
-  safe: { flex: 1, backgroundColor: theme.colors.bg },
+  safe: { flex: 1, backgroundColor: "transparent" },
   flex: { flex: 1 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
 });
