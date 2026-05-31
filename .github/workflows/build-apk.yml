@@ -1,0 +1,73 @@
+name: Build Android APK
+
+# Compila o jogo em um APK Android usando Capacitor.
+# Os runners do GitHub já vêm com Android SDK + internet, então tudo roda na nuvem.
+# Ao terminar, baixe o APK em: aba "Actions" -> rode este workflow -> seção "Artifacts".
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # permite rodar manualmente pelo botão "Run workflow"
+
+permissions:
+  contents: write       # necessário para publicar o APK como Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configurar Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar dependências (Capacitor)
+        run: npm install
+
+      - name: Adicionar plataforma Android
+        run: npx cap add android || npx cap sync android
+
+      - name: Sincronizar arquivos web -> Android
+        run: npx cap sync android
+
+      - name: Aceitar licenças e garantir pacotes do SDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools" || true
+
+      - name: Compilar APK de debug
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Publicar APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: super-jump-world-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Preparar APK para download
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk super-jump-world.apk
+
+      - name: Publicar Release (link de download fixo)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Super Jump World - ultimo build
+          body: APK de debug gerado automaticamente. Baixe o arquivo super-jump-world.apk abaixo e instale no Android.
+          files: super-jump-world.apk

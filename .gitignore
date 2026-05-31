@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+
+# Plataforma Android gerada pelo Capacitor (recriada no CI)
+android/
+ios/
+
+# Build / saídas
+*.apk
+*.aab
+dist/
+.gradle/
+build/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

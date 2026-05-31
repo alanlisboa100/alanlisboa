@@ -1,0 +1,22 @@
+{
+  "name": "super-jump-world",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Super Jump World - um platformer estilo Super Mario World em HTML5 Canvas, empacotável como APK Android via Capacitor.",
+  "author": "Kiro",
+  "license": "MIT",
+  "scripts": {
+    "serve": "node tools/serve.js",
+    "cap:add": "cap add android",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "build:apk": "cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

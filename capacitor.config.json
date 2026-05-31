@@ -1,0 +1,12 @@
+{
+  "appId": "com.kiro.superjumpworld",
+  "appName": "Super Jump World",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#5c94fc"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
