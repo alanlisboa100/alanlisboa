@@ -504,6 +504,66 @@
     return c;
   }
 
+  /* ---------- Mulher loira (vira bruxa) 14x24 ---------- */
+  function woman() {
+    var c = cv(14, 24), x = ctxOf(c);
+    var h = '#ffe07a', hd = '#e0b53f', hl = '#fff4bf', sk = '#ffdcb6', skd = '#e7a87c',
+        dr = '#e23b5a', drd = '#a82038', drl = '#ff7088', D = '#3a2630', lip = '#d12a52', rose = '#ff9bbf', W = '#ffffff';
+    // cabelo longo
+    p(x, 3, 1, 8, 4, h); p(x, 4, 1, 3, 1, hl);
+    p(x, 2, 4, 2, 15, h); p(x, 10, 4, 2, 15, h);
+    p(x, 2, 4, 1, 15, hd); p(x, 11, 4, 1, 15, hd);
+    p(x, 2, 18, 2, 2, hd); p(x, 10, 18, 2, 2, hd);
+    p(x, 3, 2, 2, 2, dr); p(x, 3, 2, 1, 1, drl);   // flor no cabelo
+    // rosto
+    p(x, 4, 5, 6, 4, sk); p(x, 5, 9, 4, 1, skd);
+    p(x, 4, 6, 1, 1, rose); p(x, 9, 6, 1, 1, rose);
+    p(x, 5, 5, 1, 1, D); p(x, 8, 5, 1, 1, D);
+    p(x, 5, 6, 1, 2, D); p(x, 8, 6, 1, 2, D);
+    p(x, 6, 8, 2, 1, lip);
+    // vestido elegante
+    p(x, 6, 9, 2, 1, sk);
+    p(x, 4, 10, 6, 3, dr); p(x, 4, 10, 1, 3, drl); p(x, 9, 10, 1, 3, drd);
+    p(x, 3, 13, 8, 1, W);
+    p(x, 2, 11, 2, 3, dr); p(x, 10, 11, 2, 3, dr);
+    p(x, 2, 14, 2, 1, sk); p(x, 10, 14, 2, 1, sk);
+    p(x, 3, 14, 8, 3, dr); p(x, 2, 17, 10, 3, dr);
+    p(x, 3, 14, 1, 6, drl); p(x, 10, 17, 1, 3, drd);
+    p(x, 5, 15, 1, 5, drd); p(x, 8, 15, 1, 5, drd);
+    p(x, 2, 20, 10, 1, drd);
+    p(x, 4, 21, 2, 2, D); p(x, 8, 21, 2, 2, D);
+    return c;
+  }
+
+  /* ---------- Bruxa na vassoura 20x18 ---------- */
+  function witch() {
+    var c = cv(20, 18), x = ctxOf(c);
+    var blk = '#1a1426', blk2 = '#0e0a18', pur = '#6a3fae', purL = '#9b6fe0',
+        gr = '#6fae3a', grd = '#4a7a26', straw = '#d8a84a', strawD = '#a87a2a', brown = '#6a4422', Y = '#ffd23f', D = '#0e0a18', W = '#ffffff';
+    // vassoura
+    p(x, 0, 12, 4, 5, straw); p(x, 0, 12, 4, 1, strawD); p(x, 1, 13, 1, 4, strawD); p(x, 2, 13, 1, 4, strawD);
+    p(x, 3, 14, 15, 2, brown); p(x, 3, 14, 15, 1, '#8a5a2e');
+    // corpo / capa
+    p(x, 7, 8, 9, 6, blk); p(x, 7, 12, 9, 2, blk2); p(x, 8, 7, 7, 2, blk);
+    p(x, 6, 10, 2, 3, blk);
+    p(x, 14, 10, 2, 2, gr);
+    // rosto verde
+    p(x, 9, 4, 6, 4, gr); p(x, 9, 7, 6, 1, grd);
+    p(x, 15, 5, 3, 2, gr); p(x, 16, 5, 2, 2, grd);  // nariz pontudo
+    p(x, 16, 4, 2, 1, gr);
+    p(x, 11, 5, 2, 2, Y); p(x, 12, 5, 1, 1, D);      // olho
+    p(x, 10, 4, 3, 1, D);                            // sobrancelha
+    p(x, 11, 7, 3, 1, D); p(x, 12, 7, 1, 1, W);      // boca/dente
+    // chapéu
+    p(x, 7, 3, 9, 1, blk);
+    p(x, 8, 3, 7, 1, pur);
+    p(x, 9, 1, 5, 2, blk);
+    p(x, 10, 0, 3, 1, blk);
+    p(x, 11, 3, 2, 1, Y);                            // fivela
+    p(x, 9, 1, 1, 1, purL);
+    return c;
+  }
+
   /* ---------- Inicialização: pré-renderiza tudo ---------- */
   var Sprites = {
     TILE: TILE,
@@ -524,6 +584,8 @@
       this.img.koopaShell = koopaShell();
       this.img.boss = [boss(0), boss(1)];
       this.img.princess = princess();
+      this.img.woman = woman();
+      this.img.witch = witch();
       this.img.coin = [coin(7), coin(5), coin(2), coin(5)];
       this.img.mushroom = mushroom();
       this.img.fireFlower = fireFlower();

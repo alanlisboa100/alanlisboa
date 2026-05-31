@@ -34,6 +34,8 @@
       this.clouds = [];
       for (var ci = 0; ci < 9; ci++) this.clouds.push({ x: Math.random() * 900, y: 22 + Math.random() * 62, s: 0.8 + Math.random() * 1.0 });
 
+      this.shake = 0; this.introFlash = 0; this.intro = null;
+
       var self = this;
       window.Input.onPause = function () { self.togglePause(); };
 
@@ -67,6 +69,7 @@
       window.Sfx.resume();
       this.lives = 3; this.score = 0; this.coins = 0; this.levelIndex = 0;
       this.loadLevel(0);
+      this.beginIntro();          // cutscene de abertura
       this.hideOverlay();
       window.Sfx.startMusic();
     },
@@ -231,6 +234,8 @@
     update: function () {
       this.anim++;
       window.Input.update();
+
+      if (this.state === 'intro') { this.updateIntro(); return; }
 
       if (this.state !== 'playing' && this.state !== 'clear') return;
 
@@ -445,6 +450,10 @@
       var scale = Math.min(cw / VIEW_W, ch / VIEW_H);
       var ox = Math.floor((cw - VIEW_W * scale) / 2);
       var oy = Math.floor((ch - VIEW_H * scale) / 2);
+      if (this.shake > 0) {
+        ox += (Math.random() * 2 - 1) * this.shake;
+        oy += (Math.random() * 2 - 1) * this.shake;
+      }
       ctx.setTransform(scale, 0, 0, scale, ox, oy);
       ctx.imageSmoothingEnabled = false;
 
@@ -497,6 +506,8 @@
       for (i = 0; i < arr.length; i++) if (arr[i].draw) arr[i].draw(ctx);
       // player
       if (!(this.state === 'gameover')) this.player.draw(ctx);
+      // atriz da cutscene de abertura
+      if (this.state === 'intro') this.drawIntroActor(ctx);
       // corações do final (beijo)
       if (this.clearMode === 'princess' && this.endHearts) {
         for (i = 0; i < this.endHearts.length; i++) {
@@ -533,6 +544,9 @@
         ctx.fillText('OBRIGADA, HEROI!', VIEW_W / 2, 40);
         ctx.textAlign = 'left';
       }
+
+      // cutscene de abertura (balões, flash)
+      if (this.state === 'intro') this.drawIntroUI(ctx);
     },
 
     drawHeart: function (ctx, x, y, s, life) {
@@ -544,6 +558,134 @@
       ctx.fillStyle = '#ff9bbf';
       ctx.fillRect(Math.round(x + 1 * s), Math.round(y + 1 * s), s, s); // brilho
       ctx.globalAlpha = 1;
+    },
+
+    /* ---------- Cutscene de abertura ---------- */
+    beginIntro: function () {
+      this.state = 'intro';
+      this.camera.x = 0;
+      var p = this.player;
+      p.dir = 1; p.frame = 'idle'; p.finished = true; p.vx = 0; p.vy = 0; p.tip = 0;
+      this.shake = 0; this.introFlash = 0;
+      this.intro = { t: 0, womanX: 150, isWitch: false, bubble: null, heroBaseY: p.y };
+    },
+
+    updateIntro: function () {
+      var I = this.intro, p = this.player;
+      if (!I) { this.state = 'playing'; return; }
+      I.t++;
+      // pular cutscene
+      if (window.Input.jumpPressed && I.t > 20) { this.endIntro(); return; }
+
+      if (I.t < 45) {                                  // a mulher se aproxima
+        if (I.womanX > 70) I.womanX -= 1.8;
+        I.bubble = null;
+      } else if (I.t < 155) {                          // tenta o beijo
+        I.womanX = 70;
+        I.bubble = { who: 'woman', x: I.womanX + 7, lines: ['Oi, gato...', 'me dá um beijinho?'] };
+        p.y = I.heroBaseY - Math.max(0, Math.sin((I.t - 45) * 0.18)) * 2;
+      } else if (I.t < 265) {                          // herói recusa
+        I.bubble = { who: 'hero', x: p.x + 6, lines: ['Desculpa...', 'eu amo a PRINCESA!'] };
+        p.y = I.heroBaseY - Math.abs(Math.sin((I.t - 155) * 0.22)) * 6;
+      } else if (I.t < 335) {                          // mulher furiosa
+        p.y = I.heroBaseY;
+        I.bubble = { who: 'woman', x: I.womanX + 7, lines: ['O QUÊ?!', 'Vai se arrepender!'] };
+      } else if (I.t < 372) {                          // TRANSFORMAÇÃO
+        I.bubble = null;
+        if (I.t === 336) { this.shake = 20; this.introFlash = 16; window.Sfx.powerdown(); }
+        if (I.t >= 354) I.isWitch = true;
+      } else if (I.t < 470) {                          // risada da bruxa
+        I.bubble = { who: 'witch', x: I.womanX + 9, lines: ['MUAHAHA!', 'A princesa será minha!'] };
+      } else if (I.t < 560) {                          // voa para o castelo
+        I.bubble = null;
+        I.womanX += 5.2;
+      } else {
+        this.endIntro(); return;
+      }
+      if (this.shake > 0) this.shake--;
+      if (this.introFlash > 0) this.introFlash--;
+    },
+
+    endIntro: function () {
+      var p = this.player;
+      if (this.intro) p.y = this.intro.heroBaseY;
+      p.finished = false; p.tip = 0;
+      this.intro = null; this.shake = 0; this.introFlash = 0;
+      this.state = 'playing';
+      window.Sfx.startMusic();
+    },
+
+    drawIntroActor: function (ctx) {
+      var I = this.intro, S = window.Sprites, E = window.Entities;
+      if (!I) return;
+      // fumaça da transformação
+      if (I.t >= 333 && I.t <= 372) {
+        var px = I.womanX + 7, py = 192, r = (I.t - 333) * 1.8;
+        ctx.fillStyle = 'rgba(120,60,180,0.55)';
+        ctx.beginPath(); ctx.arc(px, py, Math.max(2, r), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(180,120,225,0.5)';
+        ctx.beginPath(); ctx.arc(px - 7, py - 5, Math.max(2, r * 0.7), 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(px + 7, py - 3, Math.max(2, r * 0.7), 0, Math.PI * 2); ctx.fill();
+      }
+      if (!I.isWitch) {
+        E.drawImg(ctx, S.img.woman, I.womanX, 184, true);     // olha para o herói (esquerda)
+      } else {
+        var by = 150 + Math.sin(this.anim * 0.3) * 3;
+        E.drawImg(ctx, S.img.witch, I.womanX, by, false);     // voa para a direita
+      }
+    },
+
+    drawIntroUI: function (ctx) {
+      var I = this.intro; if (!I) return;
+      if (this.introFlash > 0) {
+        ctx.fillStyle = 'rgba(185,120,235,' + (this.introFlash / 16 * 0.85) + ')';
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      }
+      if (I.bubble) {
+        var b = I.bubble;
+        var anchorY = b.who === 'hero' ? (this.player.y - 2) : (I.isWitch ? 150 : 184);
+        this.drawBubble(ctx, b.x, anchorY, b.lines, b.who);
+      }
+      if (I.t > 22) {
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = '8px monospace'; ctx.textAlign = 'right';
+        ctx.fillText('A = pular', VIEW_W - 8, VIEW_H - 8); ctx.textAlign = 'left';
+      }
+    },
+
+    roundRect: function (ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    },
+
+    drawBubble: function (ctx, cx, bottomY, lines, who) {
+      ctx.font = '8px monospace';
+      var pad = 5, lineH = 10, charW = 5;
+      var w = 0, i;
+      for (i = 0; i < lines.length; i++) { var lw = lines[i].length * charW; if (lw > w) w = lw; }
+      w = Math.ceil(w) + pad * 2; var h = lines.length * lineH + pad * 2;
+      var x0 = Math.round(cx - w / 2), y0 = Math.round(bottomY - 9 - h);
+      if (x0 < 3) x0 = 3; if (x0 + w > VIEW_W - 3) x0 = VIEW_W - 3 - w;
+      var tailX = Math.max(x0 + 8, Math.min(cx, x0 + w - 8));
+      var border = who === 'witch' ? '#6a3fae' : (who === 'hero' ? '#1b7a37' : '#d24e98');
+      // sombra
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; this.roundRect(ctx, x0 + 2, y0 + 2, w, h, 5); ctx.fill();
+      // corpo
+      ctx.fillStyle = '#ffffff'; this.roundRect(ctx, x0, y0, w, h, 5); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = border; this.roundRect(ctx, x0, y0, w, h, 5); ctx.stroke();
+      // rabicho
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(tailX - 5, y0 + h - 1); ctx.lineTo(tailX + 5, y0 + h - 1); ctx.lineTo(tailX, bottomY - 2); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = border;
+      ctx.beginPath(); ctx.moveTo(tailX - 5, y0 + h); ctx.lineTo(tailX, bottomY - 2); ctx.lineTo(tailX + 5, y0 + h); ctx.stroke();
+      // texto
+      ctx.fillStyle = '#1a1426'; ctx.textAlign = 'center';
+      for (i = 0; i < lines.length; i++) ctx.fillText(lines[i], x0 + w / 2, y0 + pad + 8 + i * lineH);
+      ctx.textAlign = 'left';
     },
 
     skyPalette: function (theme) {

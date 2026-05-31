@@ -82,9 +82,36 @@ check(Levels.count >= 10, 'pelo menos 10 fases (tem ' + Levels.count + ')');
 console.log('2) Init e start...');
 Game.init(document.getElementById('game'));
 Game.start();
-check(Game.state === 'playing', 'estado playing após start');
+check(Game.state === 'intro', 'estado intro (cutscene) após start');
 check(!!Game.player, 'player criado');
 check(Game.entities.length > 0, 'entidades criadas');
+
+/* 2b) Cutscene de abertura: roda do início ao fim com render, e vira gameplay */
+console.log('2b) Testando cutscene de abertura...');
+try {
+  Game.start();
+  let ierr = null, iframes = 0;
+  for (let f = 0; f < 700 && Game.state === 'intro' && !ierr; f++) {
+    try { Game.update(); Game.render(); } catch (e) { ierr = e; }
+    iframes++;
+  }
+  if (ierr) { failures++; console.log('  EXCEÇÃO na cutscene: ' + ierr.stack); }
+  check(Game.state === 'playing', 'cutscene termina e vira gameplay (estado=' + Game.state + ')');
+  // o herói deve estar liberado para jogar
+  check(Game.player.finished === false, 'herói liberado após a cutscene');
+  console.log('   OK - cutscene rodou ' + iframes + ' frames e liberou o jogo');
+} catch (e) { failures++; console.log('  EXCEÇÃO cutscene: ' + e.stack); }
+
+/* 2c) Pular a cutscene com o botão de pulo */
+try {
+  Game.start();
+  Input.reset();
+  for (let f = 0; f < 40; f++) Game.update();   // passa do t>20 (sem pulo)
+  Input.jump = true;                            // pressiona A
+  Game.update();                                // Game calcula jumpPressed -> pula
+  check(Game.state === 'playing', 'cutscene pulável com A (estado=' + Game.state + ')');
+  Input.reset();
+} catch (e) { failures++; console.log('  EXCEÇÃO skip cutscene: ' + e.stack); }
 
 /* 3) Loop longo com input simulado (anda para a direita e pula) */
 console.log('3) Simulando jogabilidade (4000 frames)...');
@@ -206,6 +233,7 @@ try {
 console.log('6) Testando morte e game over...');
 try {
   Game.start();
+  if (Game.state === 'intro') Game.endIntro();   // pula a cutscene de abertura
   Game.lives = 0;
   Game.player.power = 0;
   Game.player.die(Game);
