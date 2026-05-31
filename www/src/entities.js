@@ -85,6 +85,7 @@
     this.dying = false;
     this.dieTimer = 0;
     this.finished = false;
+    this.tip = 0;            // inclinação ao "desmaiar" no final
   }
   Player.prototype.setSize = function () {
     var tall = this.power >= 1;
@@ -193,7 +194,19 @@
     // estrela: tonaliza
     if (this.starTime > 0) ctx.globalAlpha = 0.6 + 0.4 * Math.sin(this.starTime * 0.6);
     var ox = (img.width - this.w) / 2;
-    drawImg(ctx, img, this.x - ox, this.y - (img.height - this.h), this.dir < 0);
+    var dx = this.x - ox, dy = this.y - (img.height - this.h);
+    if (this.tip) {
+      // tomba em torno dos pés (desmaia de amor no final)
+      var cx = this.x + this.w / 2, cy = this.y + this.h;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.dir < 0 ? this.tip : -this.tip);
+      ctx.translate(-cx, -cy);
+      drawImg(ctx, img, dx, dy, this.dir < 0);
+      ctx.restore();
+    } else {
+      drawImg(ctx, img, dx, dy, this.dir < 0);
+    }
     ctx.globalAlpha = 1;
   };
 

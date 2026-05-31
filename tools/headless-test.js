@@ -185,7 +185,7 @@ try {
     let g = 0; while (!Game.bossDefeated && g < 300) { Game.player.invuln = 1e9; Game.update(); g++; }
     check(Game.bossDefeated, 'chefe final derrotado');
     Game.rescuePrincess();
-    let g2 = 0; while (Game.state === 'clear' && g2 < 1000) { Game.update(); g2++; }
+    let g2 = 0; while (Game.state === 'clear' && g2 < 1000) { Game.update(); Game.render(); g2++; }
     check(Game.state === 'win', 'vitória ao resgatar a princesa (estado=' + Game.state + ')');
   }
 } catch (e) { failures++; console.log('  EXCEÇÃO princesa: ' + e.stack); }

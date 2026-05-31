@@ -130,23 +130,30 @@
   /* ---------- Goomba ---------- */
   function goomba(frame) {
     var c = cv(16, 16), x = ctxOf(c);
-    // Corpo cogumelo
-    p(x, 4, 2, 8, 2, COL.brown);
-    p(x, 2, 4, 12, 6, COL.brown);
-    p(x, 1, 6, 14, 4, COL.brown);
-    // Parte de baixo clara
-    p(x, 3, 10, 10, 2, '#e8c89a');
-    // Olhos
-    p(x, 3, 6, 4, 3, COL.white);
-    p(x, 9, 6, 4, 3, COL.white);
-    p(x, 5, 6, 2, 3, COL.dark); // pupila
+    var br = COL.brown, brd = COL.brownD;
+    // Domo com sombreamento
+    p(x, 5, 1, 6, 1, '#a8702f');
+    p(x, 3, 2, 10, 2, '#9a6630');
+    p(x, 2, 4, 12, 4, br);
+    p(x, 1, 6, 14, 4, br);
+    p(x, 2, 9, 12, 1, brd);
+    p(x, 4, 2, 3, 1, '#bb834a');     // brilho
+    // Focinho claro
+    p(x, 3, 10, 10, 2, '#f0d2a0');
+    // Olhos com brilho
+    p(x, 3, 5, 4, 4, COL.white);
+    p(x, 9, 5, 4, 4, COL.white);
+    p(x, 5, 6, 2, 3, COL.dark);
     p(x, 9, 6, 2, 3, COL.dark);
+    p(x, 5, 6, 1, 1, COL.white);
+    p(x, 9, 6, 1, 1, COL.white);
     // Sobrancelhas bravas
-    p(x, 3, 5, 4, 1, COL.dark);
-    p(x, 9, 5, 4, 1, COL.dark);
+    p(x, 3, 4, 4, 1, COL.dark);
+    p(x, 9, 4, 4, 1, COL.dark);
     // Pés
-    if (frame === 1) { p(x, 1, 12, 5, 3, COL.brownD); p(x, 11, 12, 4, 3, COL.brownD); }
-    else { p(x, 2, 12, 4, 3, COL.brownD); p(x, 10, 12, 5, 3, COL.brownD); }
+    if (frame === 1) { p(x, 1, 12, 5, 3, brd); p(x, 11, 12, 4, 3, brd); }
+    else { p(x, 2, 12, 4, 3, brd); p(x, 10, 12, 5, 3, brd); }
+    p(x, 1, 14, 14, 1, '#3a2410');   // sola
     return c;
   }
   function goombaFlat() {
@@ -161,20 +168,27 @@
   /* ---------- Koopa (tartaruga) ---------- */
   function koopa(frame) {
     var c = cv(16, 18), x = ctxOf(c);
+    var G = COL.green, GD = COL.greenD, GL = COL.greenL, Y = COL.yellow, D = COL.dark, W = COL.white, sk = '#ffd86b', skd = '#e0b53f';
     // Cabeça
-    p(x, 10, 1, 4, 4, COL.greenL);
-    p(x, 11, 2, 4, 4, COL.green);
-    p(x, 13, 2, 1, 2, COL.dark); // olho
+    p(x, 10, 1, 4, 4, sk);
+    p(x, 11, 2, 4, 4, skd);
+    p(x, 10, 1, 3, 1, '#fff0b8');     // brilho
+    p(x, 12, 2, 2, 2, W);             // olho (branco)
+    p(x, 13, 2, 1, 2, D);             // pupila
     // Pescoço
-    p(x, 9, 5, 4, 3, COL.greenL);
+    p(x, 9, 5, 4, 3, sk);
     // Casco
-    p(x, 2, 5, 10, 8, COL.green);
-    p(x, 3, 4, 8, 2, COL.greenD);
-    p(x, 4, 7, 6, 4, COL.yellow); // barriga do casco
-    p(x, 3, 6, 8, 1, COL.greenL);
+    p(x, 2, 5, 11, 8, G);
+    p(x, 3, 4, 9, 2, GD);
+    p(x, 3, 6, 9, 1, GL);             // brilho do casco
+    p(x, 4, 7, 6, 4, Y);              // barriga
+    p(x, 4, 7, 6, 1, '#fff0a0');
+    p(x, 5, 5, 1, 1, GD); p(x, 8, 5, 1, 1, GD); // escamas
+    p(x, 2, 12, 11, 1, GD);           // sombra base
     // Pés
-    if (frame === 1) { p(x, 2, 13, 4, 3, COL.yellow); p(x, 9, 14, 4, 2, COL.yellow); }
-    else { p(x, 2, 14, 4, 2, COL.yellow); p(x, 9, 13, 4, 3, COL.yellow); }
+    if (frame === 1) { p(x, 2, 13, 4, 3, sk); p(x, 9, 14, 4, 2, sk); }
+    else { p(x, 2, 14, 4, 2, sk); p(x, 9, 13, 4, 3, sk); }
+    p(x, 2, 15, 4, 1, skd); p(x, 9, 15, 4, 1, skd);
     return c;
   }
   function koopaShell() {
@@ -447,29 +461,46 @@
   /* ---------- Princesa 14x24 ---------- */
   function princess() {
     var c = cv(14, 24), x = ctxOf(c);
-    var pink = '#ff7bc0', pinkD = '#d24e98', hair = '#ffd86b', hairD = '#e0b53f', sk = COL.skin, Y = COL.yellow, W = COL.white, D = COL.dark;
+    var pink = '#ff8fcf', pinkD = '#d24e98', pinkL = '#ffc6e8',
+        hair = '#ffe07a', hairD = '#e0b53f', hairL = '#fff4bf',
+        sk = '#ffdcb6', skd = '#e7a87c', Y = '#ffd23f', W = '#ffffff',
+        D = '#3a2630', rose = '#ff9bbf';
     // Coroa
-    p(x, 3, 1, 2, 2, Y); p(x, 6, 1, 2, 2, Y); p(x, 9, 1, 2, 2, Y);
-    p(x, 3, 3, 8, 2, Y);
-    p(x, 6, 3, 2, 1, '#ff4d6d'); // joia
-    // Cabelo
-    p(x, 3, 5, 8, 4, hair);
-    p(x, 2, 7, 2, 8, hair); p(x, 10, 7, 2, 8, hair);
-    p(x, 2, 13, 2, 2, hairD); p(x, 10, 13, 2, 2, hairD);
+    p(x, 3, 0, 2, 2, Y); p(x, 6, 0, 2, 2, Y); p(x, 9, 0, 2, 2, Y);
+    p(x, 3, 2, 8, 1, Y);
+    p(x, 3, 2, 4, 1, '#fff0a8');           // brilho
+    p(x, 6, 1, 2, 1, '#ff4d6d');           // joia
+    // Cabelo (moldura + mechas longas)
+    p(x, 3, 3, 8, 3, hair);
+    p(x, 4, 3, 3, 1, hairL);
+    p(x, 2, 5, 2, 12, hair); p(x, 10, 5, 2, 12, hair);
+    p(x, 2, 5, 1, 12, hairD); p(x, 11, 5, 1, 12, hairD);
+    p(x, 2, 16, 2, 2, hairD); p(x, 10, 16, 2, 2, hairD);
     // Rosto
-    p(x, 4, 6, 6, 3, sk);
-    p(x, 5, 7, 1, 1, D); p(x, 8, 7, 1, 1, D);
-    p(x, 6, 9, 2, 1, '#e06aa0');
-    // Vestido
-    p(x, 4, 10, 6, 2, pink);
-    p(x, 3, 12, 8, 6, pink);
-    p(x, 2, 16, 10, 4, pink);
-    p(x, 3, 13, 6, 1, W);
-    p(x, 2, 19, 10, 1, pinkD);
-    // Mãos
-    p(x, 2, 12, 2, 2, sk); p(x, 10, 12, 2, 2, sk);
-    // Pés
-    p(x, 4, 20, 2, 2, '#a33'); p(x, 8, 20, 2, 2, '#a33');
+    p(x, 4, 5, 6, 4, sk);
+    p(x, 5, 8, 4, 1, skd);
+    p(x, 4, 6, 1, 1, rose); p(x, 9, 6, 1, 1, rose);   // bochechas
+    p(x, 5, 5, 1, 1, D); p(x, 8, 5, 1, 1, D);         // cílios
+    p(x, 5, 6, 1, 2, D); p(x, 8, 6, 1, 2, D);         // olhos
+    p(x, 6, 8, 2, 1, '#d2548a');                      // sorriso
+    // Pescoço + colar
+    p(x, 6, 9, 2, 1, sk);
+    p(x, 6, 10, 2, 1, '#7fd3ff');
+    // Corpete
+    p(x, 4, 10, 6, 3, pink);
+    p(x, 4, 10, 1, 3, pinkL); p(x, 9, 10, 1, 3, pinkD);
+    p(x, 3, 13, 8, 1, W);                              // cintura
+    // Mangas / braços
+    p(x, 2, 11, 2, 3, pink); p(x, 10, 11, 2, 3, pink);
+    p(x, 2, 14, 2, 1, sk); p(x, 10, 14, 2, 1, sk);
+    // Saia
+    p(x, 3, 14, 8, 3, pink);
+    p(x, 2, 17, 10, 3, pink);
+    p(x, 3, 14, 1, 6, pinkL); p(x, 10, 17, 1, 3, pinkD);
+    p(x, 5, 15, 1, 5, pinkD); p(x, 8, 15, 1, 5, pinkD); // dobras
+    p(x, 2, 20, 10, 1, pinkD);                          // barra
+    // Sapatos
+    p(x, 4, 21, 2, 2, W); p(x, 8, 21, 2, 2, W);
     return c;
   }
 

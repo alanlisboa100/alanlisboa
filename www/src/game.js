@@ -84,6 +84,7 @@
       this.deathTimer = 0;
       this.clearMode = null;
       this.boss = null; this.princess = null; this.bossDefeated = false;
+      this.endHearts = [];
       // cria entidades a partir do mapa
       var s = this.level.spawns, k;
       for (k = 0; k < s.length; k++) {
@@ -370,14 +371,45 @@
       this.clearMode = 'princess';
       this.player.finished = true;
       this.player.vx = 0;
+      this.player.tip = 0;
+      this.endHearts = [];
       this.clearTimer = 0;
       window.Sfx.win();
+    },
+
+    spawnHeart: function (big) {
+      var pl = this.player, pr = this.princess;
+      var mx = pr ? (pl.x + pr.x) / 2 + 2 : pl.x + 6;
+      this.endHearts.push({ x: mx + (Math.random() * 8 - 4), y: pl.y - 2, vy: -0.6 - Math.random() * 0.5, life: 55, s: big ? 2 : 1 });
     },
 
     updateClear: function () {
       this.clearTimer++;
       var p = this.player, floorY = window.Levels.FLOOR * TILE - p.h;
 
+      if (this.clearMode === 'princess') {
+        var pl = this.player, pr = this.princess;
+        // a princesa se aproxima do herói e o beija; ele "desmaia" de amor
+        if (pr) {
+          var targetX = (pr.x > pl.x) ? pl.x + pl.w - 2 : pl.x - pr.w + 2;
+          if (this.clearTimer < 45 && Math.abs(pr.x - targetX) > 1) pr.x += (pr.x > targetX) ? -0.7 : 0.7;
+          pl.dir = (pr.x >= pl.x) ? 1 : -1;
+        }
+        if (this.clearTimer === 46) { window.Sfx.coin(); this.spawnHeart(true); }      // o beijo!
+        else if (this.clearTimer > 46 && this.clearTimer < 95) { if (this.clearTimer % 7 === 0) this.spawnHeart(false); }
+        else if (this.clearTimer >= 95) {
+          if (pl.tip < Math.PI / 2) pl.tip += 0.07;                                    // tomba
+          if (this.clearTimer % 16 === 0) this.spawnHeart(false);
+        }
+        // atualiza corações flutuantes
+        for (var hi = this.endHearts.length - 1; hi >= 0; hi--) {
+          var hh = this.endHearts[hi];
+          hh.y += hh.vy; hh.vy *= 0.97; hh.life--;
+          if (hh.life <= 0) this.endHearts.splice(hi, 1);
+        }
+        if (this.clearTimer > 220) this.win();
+        return;
+      }
       if (this.clearMode === 'boss') {
         if (this.time > 0 && this.clearTimer > 60) {
           var decB = Math.min(this.time, 6);
@@ -385,10 +417,6 @@
         } else if (this.clearTimer > 80 && this.time <= 0) {
           this.nextLevel();
         }
-        return;
-      }
-      if (this.clearMode === 'princess') {
-        if (this.clearTimer > 160) this.win();
         return;
       }
 
@@ -469,6 +497,13 @@
       for (i = 0; i < arr.length; i++) if (arr[i].draw) arr[i].draw(ctx);
       // player
       if (!(this.state === 'gameover')) this.player.draw(ctx);
+      // corações do final (beijo)
+      if (this.clearMode === 'princess' && this.endHearts) {
+        for (i = 0; i < this.endHearts.length; i++) {
+          var eh = this.endHearts[i];
+          this.drawHeart(ctx, eh.x, eh.y, eh.s, eh.life);
+        }
+      }
       ctx.restore();
 
       // flash de power-up
@@ -498,6 +533,17 @@
         ctx.fillText('OBRIGADA, HEROI!', VIEW_W / 2, 40);
         ctx.textAlign = 'left';
       }
+    },
+
+    drawHeart: function (ctx, x, y, s, life) {
+      s = s || 1;
+      ctx.globalAlpha = life ? Math.min(1, life / 30) : 1;
+      ctx.fillStyle = '#ff4d6d';
+      var px = [[1, 0], [3, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [1, 2], [2, 2], [3, 2], [2, 3]];
+      for (var i = 0; i < px.length; i++) ctx.fillRect(Math.round(x + px[i][0] * s), Math.round(y + px[i][1] * s), s, s);
+      ctx.fillStyle = '#ff9bbf';
+      ctx.fillRect(Math.round(x + 1 * s), Math.round(y + 1 * s), s, s); // brilho
+      ctx.globalAlpha = 1;
     },
 
     skyPalette: function (theme) {
