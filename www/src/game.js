@@ -28,6 +28,12 @@
       window.Input.init();
       window.Sfx.init();
 
+      // fundo: estrelas e nuvens pré-computadas (parallax)
+      this.stars = [];
+      for (var si = 0; si < 70; si++) this.stars.push({ x: Math.random() * 900, y: Math.random() * 130, s: Math.random() < 0.25 ? 2 : 1, a: 0.4 + Math.random() * 0.6 });
+      this.clouds = [];
+      for (var ci = 0; ci < 9; ci++) this.clouds.push({ x: Math.random() * 900, y: 22 + Math.random() * 62, s: 0.8 + Math.random() * 1.0 });
+
       var self = this;
       window.Input.onPause = function () { self.togglePause(); };
 
@@ -427,20 +433,18 @@
     drawScene: function (ctx) {
       var cam = this.camera, L = this.level, S = window.Sprites;
 
-      // céu
-      this.drawSky(ctx);
+      // fundo em camadas (parallax)
+      this.drawBackground(ctx, cam.x);
 
-      // decoração (parallax)
+      // decoração de primeiro plano (arbustos)
       ctx.save();
       var d, dx;
       for (var i = 0; i < L.decor.length; i++) {
         d = L.decor[i];
-        var par = d.kind === 'cloud' ? 0.45 : (d.kind === 'hill' ? 0.7 : 1);
-        dx = d.x - cam.x * par;
+        if (d.kind !== 'bush') continue;
+        dx = d.x - cam.x;
         if (dx < -80 || dx > VIEW_W + 20) continue;
-        if (d.kind === 'cloud') ctx.drawImage(S.img.cloud, dx, d.y);
-        else if (d.kind === 'hill') ctx.drawImage(S.img.hill, dx, d.y - 32 + 16);
-        else if (d.kind === 'bush') ctx.drawImage(S.img.bush, dx, d.y);
+        ctx.drawImage(S.img.bush, dx, d.y);
       }
       // castelo no fim
       var castleX = L.castleCol * TILE - cam.x;
@@ -496,23 +500,170 @@
       }
     },
 
-    drawSky: function (ctx) {
-      var theme = this.level.theme;
-      var g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-      if (theme === 'dusk') { g.addColorStop(0, '#3a2a6b'); g.addColorStop(1, '#b65a8e'); }
-      else if (theme === 'night') { g.addColorStop(0, '#070726'); g.addColorStop(1, '#1d1d5a'); }
-      else if (theme === 'cave') { g.addColorStop(0, '#140f0a'); g.addColorStop(1, '#33251a'); }
-      else if (theme === 'castle') { g.addColorStop(0, '#1a0d12'); g.addColorStop(1, '#3a1422'); }
-      else { g.addColorStop(0, '#5c94fc'); g.addColorStop(1, '#9bd0ff'); }
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-      // lua à noite
-      if (theme === 'night') {
-        ctx.fillStyle = '#fdf6c8';
-        ctx.beginPath(); ctx.arc(VIEW_W - 64, 46, 15, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.8;
-        ctx.fillRect(40, 30, 2, 2); ctx.fillRect(120, 50, 2, 2); ctx.fillRect(200, 24, 2, 2);
-        ctx.fillRect(300, 60, 2, 2); ctx.fillRect(360, 36, 2, 2); ctx.globalAlpha = 1;
+    skyPalette: function (theme) {
+      switch (theme) {
+        case 'dusk': return { top: '#2a2a6b', mid: '#9b4a8e', bot: '#ff9e6b', far: '#5b4a8a', near: '#7a3f6e', hill: '#5a2f5e' };
+        case 'night': return { top: '#05051f', mid: '#13133b', bot: '#2a2a5e', far: '#1a1a4a', near: '#222a5e', hill: '#16203f' };
+        case 'cave': return { top: '#0a0806', mid: '#1a120c', bot: '#2a1c10', far: '#241a12', near: '#33251a', hill: '#1c140d' };
+        case 'castle': return { top: '#140a12', mid: '#26101e', bot: '#3a1a2a', far: '#2a1422', near: '#3a1e30', hill: '#23121d' };
+        default: return { top: '#3f86e0', mid: '#7ec0ee', bot: '#bfe3ff', far: '#8aa9c8', near: '#6fae6a', hill: '#3f9a4a' };
+      }
+    },
+
+    drawBackground: function (ctx, camx) {
+      var theme = this.level.theme || 'day';
+      var W = VIEW_W, H = VIEW_H, pal = this.skyPalette(theme);
+
+      // 1) céu em gradiente
+      var sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, pal.top); sky.addColorStop(0.55, pal.mid); sky.addColorStop(1, pal.bot);
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+      if (theme === 'cave') { this.bgCave(ctx, camx, pal); return; }
+      if (theme === 'castle') { this.bgCastle(ctx, camx, pal); return; }
+
+      var night = (theme === 'night');
+
+      // 2) sol/lua com brilho
+      var cx = W * 0.76, cy = H * 0.26, rad = night ? 14 : 18;
+      var glow = ctx.createRadialGradient(cx, cy, 2, cx, cy, rad * 3.2);
+      glow.addColorStop(0, night ? 'rgba(255,250,220,0.45)' : 'rgba(255,244,190,0.65)');
+      glow.addColorStop(1, 'rgba(255,244,190,0)');
+      ctx.fillStyle = glow; ctx.fillRect(cx - rad * 3.2, cy - rad * 3.2, rad * 6.4, rad * 6.4);
+      ctx.fillStyle = night ? '#fdf6c8' : '#fff3b0';
+      ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+      if (night) {
+        ctx.fillStyle = pal.top;
+        ctx.beginPath(); ctx.arc(cx + 6, cy - 4, rad, 0, Math.PI * 2); ctx.fill(); // crescente
+        // estrelas
+        var st = this.stars;
+        ctx.fillStyle = '#ffffff';
+        for (var i = 0; i < st.length; i++) {
+          var sx = (st[i].x - camx * 0.08); sx = ((sx % (W + 40)) + (W + 40)) % (W + 40) - 20;
+          ctx.globalAlpha = st[i].a;
+          ctx.fillRect(sx, st[i].y, st[i].s, st[i].s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // 3) montanhas distantes (2 cordilheiras)
+      this.mountainLayer(ctx, camx, 0.12, 196, 96, 150, pal.far, !night && !(theme === 'dusk'));
+      this.mountainLayer(ctx, camx, 0.24, 202, 64, 110, pal.near, false);
+
+      // 4) nuvens
+      this.bgClouds(ctx, camx, night);
+
+      // 5) colinas próximas
+      this.hillBand(ctx, camx, 0.42, 204, 26, 96, pal.hill);
+    },
+
+    mountainLayer: function (ctx, camx, par, baseY, height, spacing, color, snow) {
+      var off = (camx * par) % spacing; if (off < 0) off += spacing;
+      ctx.fillStyle = color;
+      for (var bx = -spacing - off; bx < VIEW_W + spacing; bx += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(bx, baseY);
+        ctx.lineTo(bx + spacing / 2, baseY - height);
+        ctx.lineTo(bx + spacing, baseY);
+        ctx.closePath(); ctx.fill();
+      }
+      if (snow) {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        for (bx = -spacing - off; bx < VIEW_W + spacing; bx += spacing) {
+          var px = bx + spacing / 2;
+          ctx.beginPath();
+          ctx.moveTo(px, baseY - height);
+          ctx.lineTo(px - height * 0.16, baseY - height * 0.78);
+          ctx.lineTo(px, baseY - height * 0.7);
+          ctx.lineTo(px + height * 0.16, baseY - height * 0.78);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = color;
+      }
+    },
+
+    hillBand: function (ctx, camx, par, baseY, r, spacing, color) {
+      var off = (camx * par) % spacing; if (off < 0) off += spacing;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, baseY, VIEW_W, VIEW_H - baseY);
+      for (var bx = -spacing - off; bx < VIEW_W + spacing; bx += spacing) {
+        ctx.beginPath(); ctx.arc(bx + spacing / 2, baseY, r, Math.PI, 0, true); ctx.fill();
+      }
+    },
+
+    bgClouds: function (ctx, camx, night) {
+      var cl = this.clouds, W = VIEW_W;
+      ctx.fillStyle = night ? 'rgba(200,205,235,0.30)' : 'rgba(255,255,255,0.92)';
+      for (var i = 0; i < cl.length; i++) {
+        var c = cl[i];
+        var x = (c.x - camx * 0.3); x = ((x % (W + 120)) + (W + 120)) % (W + 120) - 60;
+        var y = c.y, s = c.s;
+        ctx.beginPath();
+        ctx.arc(x, y, 7 * s, 0, Math.PI * 2);
+        ctx.arc(x + 9 * s, y - 4 * s, 9 * s, 0, Math.PI * 2);
+        ctx.arc(x + 20 * s, y, 8 * s, 0, Math.PI * 2);
+        ctx.arc(x + 10 * s, y + 3 * s, 8 * s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    },
+
+    bgCave: function (ctx, camx, pal) {
+      var W = VIEW_W, H = VIEW_H;
+      // parede ao fundo levemente texturizada
+      var off = (camx * 0.2) % 40; if (off < 0) off += 40;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      for (var bx = -40 - off; bx < W + 40; bx += 40) ctx.fillRect(bx, 0, 20, H);
+      // estalactites no topo
+      var so = (camx * 0.35) % 64; if (so < 0) so += 64;
+      ctx.fillStyle = '#2b1d12';
+      for (var x = -64 - so; x < W + 64; x += 64) {
+        var hgt = 26 + ((x | 0) % 3) * 8;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 11, 0); ctx.lineTo(x + 5, hgt); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x + 32, 0); ctx.lineTo(x + 42, 0); ctx.lineTo(x + 37, hgt - 10); ctx.closePath(); ctx.fill();
+      }
+      // cristais brilhantes
+      var co = (camx * 0.5) % 120; if (co < 0) co += 120;
+      for (var cxp = -120 - co; cxp < W + 120; cxp += 120) {
+        var gy = 150;
+        var g = ctx.createRadialGradient(cxp + 30, gy, 1, cxp + 30, gy, 18);
+        g.addColorStop(0, 'rgba(120,230,255,0.55)'); g.addColorStop(1, 'rgba(120,230,255,0)');
+        ctx.fillStyle = g; ctx.fillRect(cxp + 12, gy - 18, 36, 36);
+        ctx.fillStyle = '#7fe3ff';
+        ctx.beginPath(); ctx.moveTo(cxp + 30, gy - 10); ctx.lineTo(cxp + 34, gy); ctx.lineTo(cxp + 30, gy + 8); ctx.lineTo(cxp + 26, gy); ctx.closePath(); ctx.fill();
+      }
+    },
+
+    bgCastle: function (ctx, camx, pal) {
+      var W = VIEW_W, H = VIEW_H;
+      // parede de tijolos ao fundo
+      var bw = 32, bh = 16, off = (camx * 0.25) % (bw); if (off < 0) off += bw;
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      for (var ry = 0; ry < H; ry += bh) {
+        var stagger = ((ry / bh) % 2) * (bw / 2);
+        for (var bx = -bw - off - stagger; bx < W + bw; bx += bw) {
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;
+          ctx.strokeRect(bx + 1, ry + 1, bw - 2, bh - 2);
+        }
+      }
+      // janelas com luar
+      var wo = (camx * 0.3) % 180; if (wo < 0) wo += 180;
+      for (var wx = -180 - wo; wx < W + 180; wx += 180) {
+        var g = ctx.createLinearGradient(0, 30, 0, 90);
+        g.addColorStop(0, 'rgba(120,140,220,0.40)'); g.addColorStop(1, 'rgba(120,140,220,0.05)');
+        ctx.fillStyle = g;
+        ctx.fillRect(wx + 80, 30, 22, 54);
+        ctx.beginPath(); ctx.arc(wx + 91, 30, 11, Math.PI, 0); ctx.fill();
+      }
+      // tochas com chama tremulante
+      var to = (camx * 0.5) % 110; if (to < 0) to += 110;
+      var flick = 2 + Math.sin(this.anim * 0.3) * 1.5;
+      for (var tx = -110 - to; tx < W + 110; tx += 110) {
+        ctx.fillStyle = '#5a3a20'; ctx.fillRect(tx + 50, 96, 4, 16);   // suporte
+        var fg = ctx.createRadialGradient(tx + 52, 92, 1, tx + 52, 92, 12 + flick);
+        fg.addColorStop(0, 'rgba(255,210,90,0.9)'); fg.addColorStop(0.5, 'rgba(255,120,40,0.6)'); fg.addColorStop(1, 'rgba(255,120,40,0)');
+        ctx.fillStyle = fg; ctx.fillRect(tx + 40, 78, 24, 24);
+        ctx.fillStyle = '#ffd23f';
+        ctx.beginPath(); ctx.moveTo(tx + 52, 86 - flick * 2); ctx.lineTo(tx + 56, 96); ctx.lineTo(tx + 48, 96); ctx.closePath(); ctx.fill();
       }
     },
 

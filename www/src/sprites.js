@@ -36,65 +36,87 @@
 
   /* ---------- Herói (Mario-like) composto por retângulos ---------- */
   // opt: {tall, frame, shirt, overalls, hat, skin}
+  // opt: {tall, frame, fire} - aventureiro encapuzado com cachecol
   function drawHero(x, opt) {
     var f = opt.frame || 'idle';
-    var hat = opt.hat || COL.red;
-    var shirt = opt.shirt || COL.red;
-    var ov = opt.overalls || COL.blue;
-    var sk = opt.skin || COL.skin;
-    var bottomLegs;
+    var tall = !!opt.tall;
+    var fire = !!opt.fire;
+    var O = '#171022';                                  // contorno/sombra forte
+    var G = fire ? '#f2f2f7' : '#2fa84f';               // capuz/túnica
+    var GD = fire ? '#b7c0cb' : '#1b7a37';
+    var GL = fire ? '#ffffff' : '#62d27e';
+    var SC = fire ? '#e23636' : '#ff7a2f';              // cachecol
+    var SCD = fire ? '#9c1f1f' : '#d9531a';
+    var SK = '#ffce9e', SKD = '#d98a52';
+    var BO = '#5a3a20', BOD = '#3a2412';                // botas / cinto
+    var PA = '#34364c';                                 // calça
+    var YE = '#ffd23f', W = '#ffffff';
 
-    // Boné
-    p(x, 4, 1, 7, 3, hat);
-    p(x, 3, 4, 11, 1, hat);
-    p(x, 10, 3, 4, 1, hat); // aba frontal
-    // Rosto
-    p(x, 4, 4, 8, 4, sk);
-    // Cabelo / costeleta
-    p(x, 4, 5, 1, 3, COL.brown);
-    // Olho
-    p(x, 9, 5, 1, 2, COL.dark);
-    // Bigode
-    p(x, 7, 7, 5, 1, COL.brown);
-    // Orelha
-    p(x, 5, 6, 1, 1, COL.skinD);
+    // ---------- Cabeça (capuz) ----------
+    p(x, 4, 0, 8, 1, O);
+    p(x, 3, 1, 10, 6, G);
+    p(x, 3, 5, 10, 2, GD);          // sombra inferior
+    p(x, 11, 1, 2, 5, GD);          // sombra lateral
+    p(x, 4, 1, 3, 1, GL);           // brilho topo
+    p(x, 4, 2, 1, 3, GL);           // brilho lateral
+    p(x, 3, 0, 1, 1, O); p(x, 12, 0, 1, 1, O);
+    // rosto
+    p(x, 5, 3, 6, 4, SK);
+    p(x, 5, 6, 6, 1, SKD);          // queixo
+    p(x, 4, 3, 1, 3, GD); p(x, 11, 3, 1, 3, GD); // moldura do capuz
+    // olhos
+    p(x, 6, 4, 2, 2, W); p(x, 9, 4, 2, 2, W);
+    p(x, 7, 4, 1, 2, O); p(x, 10, 4, 1, 2, O);
 
-    if (opt.tall) {
-      // Corpo grande (16x28)
-      p(x, 4, 8, 8, 3, shirt);          // camisa
-      p(x, 3, 11, 10, 8, ov);           // macacão
-      p(x, 5, 8, 1, 3, ov);             // alça
-      p(x, 9, 8, 1, 3, ov);             // alça
-      p(x, 6, 13, 1, 1, COL.yellow);    // botão
-      p(x, 9, 13, 1, 1, COL.yellow);    // botão
-      p(x, 2, 11, 2, 5, sk);            // braço esq
-      p(x, 12, 11, 2, 5, sk);           // braço dir
-      if (f === 'jump') { p(x, 2, 9, 2, 3, sk); p(x, 12, 9, 2, 3, sk); }
+    // ---------- Cachecol ----------
+    p(x, 3, 7, 9, 2, SC);
+    p(x, 3, 8, 9, 1, SCD);
+    var flut = (f === 'walk2') ? 1 : (f === 'jump' ? -1 : 0);
+    p(x, 1, 7, 3, 1, SC);
+    p(x, 0, 8 + flut, 2, 1, SCD);   // ponta esvoaçante
+
+    if (tall) {
+      // ---------- Corpo grande (16x28) ----------
+      p(x, 3, 9, 10, 9, G);
+      p(x, 3, 14, 10, 4, GD);
+      p(x, 4, 9, 1, 5, GL);
+      p(x, 3, 17, 10, 2, BO);       // cinto
+      p(x, 7, 17, 2, 2, YE);        // fivela
+      if (f === 'jump') {
+        p(x, 2, 8, 2, 4, G); p(x, 12, 8, 2, 4, G);
+        p(x, 2, 7, 2, 1, SK); p(x, 12, 7, 2, 1, SK);
+      } else {
+        p(x, 2, 10, 2, 5, G); p(x, 12, 10, 2, 5, G);
+        p(x, 2, 15, 2, 2, SK); p(x, 12, 15, 2, 2, SK);
+      }
       if (f === 'crouch') {
-        p(x, 3, 16, 10, 4, ov);
-        p(x, 3, 20, 5, 2, COL.brown); p(x, 9, 20, 5, 2, COL.brown);
+        p(x, 3, 19, 10, 3, PA);
+        p(x, 3, 22, 5, 2, BO); p(x, 8, 22, 5, 2, BO);
         return;
       }
-      bottomLegs = 19;
-      p(x, 4, 19, 3, 4, ov); p(x, 9, 19, 3, 4, ov); // pernas
-      if (f === 'walk1') { p(x, 3, 23, 4, 2, COL.brown); p(x, 10, 22, 4, 2, COL.brown); }
-      else if (f === 'walk2') { p(x, 3, 22, 4, 2, COL.brown); p(x, 10, 23, 4, 2, COL.brown); }
-      else if (f === 'jump') { p(x, 3, 22, 4, 2, COL.brown); p(x, 9, 23, 4, 2, COL.brown); }
-      else { p(x, 4, 23, 3, 2, COL.brown); p(x, 9, 23, 3, 2, COL.brown); }
+      p(x, 4, 19, 3, 3, PA); p(x, 9, 19, 3, 3, PA);
+      if (f === 'walk1') { p(x, 3, 22, 4, 2, BO); p(x, 10, 21, 4, 2, BO); }
+      else if (f === 'walk2') { p(x, 3, 21, 4, 2, BO); p(x, 10, 22, 4, 2, BO); }
+      else { p(x, 4, 22, 4, 2, BO); p(x, 9, 22, 4, 2, BO); }
+      p(x, 4, 23, 3, 1, BOD); p(x, 9, 23, 3, 1, BOD);
     } else {
-      // Corpo pequeno (16x16)
-      p(x, 4, 8, 8, 2, shirt);          // camisa
-      p(x, 3, 10, 10, 3, ov);           // macacão
-      p(x, 5, 8, 1, 2, ov);             // alça
-      p(x, 9, 8, 1, 2, ov);             // alça
-      p(x, 5, 10, 1, 1, COL.yellow);
-      p(x, 10, 10, 1, 1, COL.yellow);
-      p(x, 2, 10, 1, 2, sk); p(x, 13, 10, 1, 2, sk); // mãos
-      if (f === 'jump') { p(x, 2, 8, 1, 2, sk); p(x, 13, 8, 1, 2, sk); }
-      if (f === 'walk1') { p(x, 3, 13, 4, 2, COL.brown); p(x, 10, 12, 4, 2, COL.brown); }
-      else if (f === 'walk2') { p(x, 3, 12, 4, 2, COL.brown); p(x, 10, 13, 4, 2, COL.brown); }
-      else if (f === 'jump') { p(x, 2, 12, 4, 2, COL.brown); p(x, 10, 13, 4, 2, COL.brown); }
-      else { p(x, 3, 13, 4, 2, COL.brown); p(x, 9, 13, 4, 2, COL.brown); }
+      // ---------- Corpo pequeno (16x16) ----------
+      p(x, 4, 9, 8, 3, G);
+      p(x, 4, 11, 8, 1, GD);
+      p(x, 4, 9, 1, 2, GL);
+      p(x, 4, 12, 8, 1, BO);        // cinto
+      p(x, 7, 12, 2, 1, YE);
+      if (f === 'jump') {
+        p(x, 3, 8, 1, 2, G); p(x, 12, 8, 1, 2, G);
+        p(x, 3, 8, 1, 1, SK); p(x, 12, 8, 1, 1, SK);
+      } else {
+        p(x, 3, 9, 1, 3, G); p(x, 12, 9, 1, 3, G);
+        p(x, 3, 11, 1, 1, SK); p(x, 12, 11, 1, 1, SK);
+      }
+      if (f === 'walk1') { p(x, 4, 13, 4, 2, BO); p(x, 9, 13, 3, 2, BO); }
+      else if (f === 'walk2') { p(x, 4, 13, 3, 2, BO); p(x, 9, 13, 4, 2, BO); }
+      else { p(x, 4, 13, 3, 2, BO); p(x, 9, 13, 3, 2, BO); }
+      p(x, 4, 14, 8, 1, BOD);       // solas
     }
   }
 
@@ -227,15 +249,21 @@
   /* ---------- Blocos (tiles 16x16) ---------- */
   function ground() {
     var c = cv(16, 16), x = ctxOf(c);
+    // terra com gradiente
     p(x, 0, 0, 16, 16, COL.dirt);
+    p(x, 0, 10, 16, 6, COL.dirtD);          // base escura
+    p(x, 2, 8, 2, 2, '#d98a4a');            // pedrinhas claras
+    p(x, 10, 9, 2, 2, '#d98a4a');
+    p(x, 6, 12, 2, 2, COL.dirtD);
+    p(x, 12, 6, 1, 2, COL.dirtD);
     // grama no topo
-    p(x, 0, 0, 16, 5, COL.grass);
-    p(x, 0, 0, 16, 2, COL.grassL);
-    // textura de terra
-    p(x, 1, 7, 3, 2, COL.dirtD);
-    p(x, 8, 8, 3, 2, COL.dirtD);
-    p(x, 5, 12, 3, 2, COL.dirtD);
-    p(x, 12, 11, 2, 2, COL.dirtD);
+    p(x, 0, 0, 16, 4, COL.grass);
+    p(x, 0, 0, 16, 1, COL.grassL);
+    // lâminas de grama
+    p(x, 1, 4, 1, 2, COL.grass); p(x, 4, 4, 1, 3, COL.grass);
+    p(x, 7, 4, 1, 2, COL.grass); p(x, 10, 4, 1, 3, COL.grass);
+    p(x, 13, 4, 1, 2, COL.grass);
+    p(x, 3, 1, 2, 1, COL.grassL); p(x, 9, 1, 2, 1, COL.grassL);
     p(x, 0, 15, 16, 1, COL.dirtD);
     return c;
   }
@@ -456,7 +484,7 @@
       frames.concat(['crouch']).forEach(function (f) {
         self.heroSmall[f] = heroSprite({ tall: false, frame: f });
         self.heroBig[f] = heroSprite({ tall: true, frame: f });
-        self.heroFire[f] = heroSprite({ tall: true, frame: f, shirt: COL.white, overalls: COL.red, hat: COL.white });
+        self.heroFire[f] = heroSprite({ tall: true, frame: f, fire: true });
       });
 
       this.img.goomba = [goomba(0), goomba(1)];
