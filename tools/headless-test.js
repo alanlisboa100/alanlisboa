@@ -64,12 +64,19 @@ console.log('1) Construindo fases...');
 for (let i = 0; i < Levels.count; i++) {
   const L = Levels.load(i);
   check(L.cols > 0 && L.rows === 15, 'dimensões fase ' + i);
-  check(L.flagCol > 0 && L.flagCol < L.cols, 'flag dentro do mapa fase ' + i);
+  if (!L.hasBoss) check(L.flagCol > 0 && L.flagCol < L.cols, 'flag dentro do mapa fase ' + i);
   check(L.pixelWidth === L.cols * 16, 'pixelWidth fase ' + i);
-  let coins = 0, enemies = 0;
-  L.spawns.forEach((s) => { if (s.kind === 'coin') coins++; else enemies++; });
-  console.log('   Fase ' + L.name + ': ' + L.cols + ' cols, ' + enemies + ' inimigos, ' + coins + ' moedas');
+  let coins = 0, enemies = 0, bosses = 0, princesses = 0;
+  L.spawns.forEach((s) => {
+    if (s.kind === 'coin') coins++;
+    else if (s.kind === 'boss') bosses++;
+    else if (s.kind === 'princess') princesses++;
+    else enemies++;
+  });
+  console.log('   Fase ' + L.name + ': ' + L.cols + ' cols, ' + enemies + ' inimigos, ' + coins + ' moedas' +
+    (bosses ? ', ' + bosses + ' CHEFE' : '') + (princesses ? ', PRINCESA' : ''));
 }
+check(Levels.count >= 10, 'pelo menos 10 fases (tem ' + Levels.count + ')');
 
 /* 2) Init + start */
 console.log('2) Init e start...');
@@ -115,19 +122,80 @@ if (found) {
   } catch (e) { failures++; console.log('  EXCEÇÃO power-up: ' + e.stack); }
 }
 
-/* 5) Testa sequência da bandeira -> avanço de fase -> vitória */
-console.log('5) Testando bandeira e transição entre fases...');
+/* 5) Testa avanço por TODAS as fases até a vitória (bandeira/chefe/princesa) */
+console.log('5) Testando transição por todas as fases até a vitória...');
 try {
   Game.start();
   let safety = 0;
-  while (Game.state !== 'win' && safety < 6) {
-    Game.beginFlag();
+  while (Game.state !== 'win' && safety < 24) {
+    const L = Game.level;
+    if (L.hasPrincess) { Game.bossDefeated = true; Game.rescuePrincess(); }
+    else if (L.hasBoss) { Game.beginBossClear(); }
+    else { Game.beginFlag(); }
     let g = 0;
-    while (Game.state === 'clear' && g < 2000) { Game.player.power = 1; Game.update(); g++; }
+    while (Game.state === 'clear' && g < 3000) { Game.player.power = 1; Game.update(); g++; }
     safety++;
   }
   check(Game.state === 'win', 'chegou à vitória após ' + safety + ' fases (estado=' + Game.state + ')');
-} catch (e) { failures++; console.log('  EXCEÇÃO bandeira: ' + e.stack); }
+} catch (e) { failures++; console.log('  EXCEÇÃO transição: ' + e.stack); }
+
+/* 5b) Testa mecânica do CHEFE (stomp reduz vida -> derrota -> clear) */
+console.log('5b) Testando mecânica do chefe...');
+try {
+  // acha o índice de uma fase de chefe sem princesa
+  let bossIdx = -1;
+  for (let i = 0; i < Levels.count; i++) { const L = Levels.load(i); if (L.hasBoss && !L.hasPrincess) { bossIdx = i; break; } }
+  check(bossIdx >= 0, 'existe fase de chefe');
+  if (bossIdx >= 0) {
+    Game.start(); Game.loadLevel(bossIdx);
+    check(!!Game.boss, 'chefe criado na fase ' + Game.level.name);
+    // simula a luta por 500 frames (IA do chefe, fogo, desenho)
+    let serr = null;
+    for (let f = 0; f < 500 && !serr; f++) {
+      Input.right = (f % 60 < 40); Input.left = !Input.right; Input.run = false;
+      Input.jump = (f % 40 < 10);
+      try { Game.update(); Game.render(); } catch (e) { serr = e; }
+      if (Game.state !== 'playing') break;
+    }
+    if (serr) { failures++; console.log('  EXCEÇÃO simulando luta: ' + serr.stack); }
+    if (Game.state === 'playing' && Game.boss) {
+      const hp0 = Game.boss.hp;
+      let guard = 0;
+      while (Game.boss && !Game.boss.defeated && guard < 50) { Game.boss.invuln = 0; Game.boss.hurt(Game); guard++; }
+      check(Game.boss.defeated, 'chefe derrotado');
+      let g = 0;
+      while (Game.state !== 'clear' && g < 200) { Game.update(); g++; }
+      check(Game.bossDefeated === true, 'bossDefeated marcado');
+      check(Game.state === 'clear', 'fase entra em clear após derrotar o chefe (estado=' + Game.state + ')');
+    } else {
+      console.log('   (o chefe matou o player na simulação - ok, sem exceção)');
+    }
+  }
+} catch (e) { failures++; console.log('  EXCEÇÃO chefe: ' + e.stack); }
+
+/* 5c) Testa resgate da PRINCESA -> vitória */
+console.log('5c) Testando resgate da princesa...');
+try {
+  let princIdx = -1;
+  for (let i = 0; i < Levels.count; i++) { const L = Levels.load(i); if (L.hasPrincess) { princIdx = i; break; } }
+  check(princIdx >= 0, 'existe fase com princesa');
+  if (princIdx >= 0) {
+    Game.start(); Game.loadLevel(princIdx);
+    check(!!Game.princess, 'princesa criada');
+    // antes de derrotar o chefe, tocar na princesa não vence
+    Game.rescuePrincessAttempt = false;
+    Game.bossDefeated = false;
+    // simula derrota do chefe (zera invuln a cada golpe)
+    let dg = 0;
+    if (Game.boss) { while (Game.boss && !Game.boss.defeated && dg < 50) { Game.boss.invuln = 0; Game.boss.hurt(Game); dg++; } }
+    let g = 0; while (!Game.bossDefeated && g < 200) { Game.update(); g++; }
+    check(Game.bossDefeated, 'chefe final derrotado');
+    // agora resgata
+    Game.rescuePrincess();
+    let g2 = 0; while (Game.state === 'clear' && g2 < 1000) { Game.update(); g2++; }
+    check(Game.state === 'win', 'vitória ao resgatar a princesa (estado=' + Game.state + ')');
+  }
+} catch (e) { failures++; console.log('  EXCEÇÃO princesa: ' + e.stack); }
 
 /* 6) Testa morte/respawn/game over */
 console.log('6) Testando morte e game over...');

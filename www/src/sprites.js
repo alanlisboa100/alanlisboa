@@ -374,6 +374,77 @@
     return c;
   }
 
+  /* ---------- Chefe (rei tartaruga) 30x28 ---------- */
+  function boss(frame) {
+    var c = cv(30, 28), x = ctxOf(c);
+    var G = COL.green, GD = COL.greenD, GL = COL.greenL, bone = '#fff1c0', belly = '#f4d08a', D = COL.dark, RE = '#e23636';
+    // Casco / corpo
+    p(x, 3, 9, 18, 15, G);
+    p(x, 5, 7, 14, 3, GD);
+    p(x, 4, 11, 16, 2, GL);
+    // Espinhos do casco (osso)
+    p(x, 5, 4, 3, 4, bone); p(x, 11, 3, 3, 5, bone); p(x, 16, 4, 3, 4, bone);
+    p(x, 6, 2, 1, 2, bone); p(x, 12, 1, 1, 2, bone); p(x, 17, 2, 1, 2, bone);
+    // Barriga
+    p(x, 9, 15, 12, 9, belly);
+    p(x, 10, 17, 10, 1, bone); p(x, 10, 20, 10, 1, bone);
+    // Cabeça
+    p(x, 20, 5, 9, 9, G);
+    p(x, 21, 4, 7, 2, GD);
+    // Chifres
+    p(x, 20, 2, 2, 3, bone); p(x, 26, 2, 2, 3, bone);
+    // Olho bravo
+    p(x, 21, 6, 4, 1, D);          // sobrancelha
+    p(x, 22, 7, 3, 3, COL.white);
+    p(x, 23, 8, 2, 2, RE);
+    // Focinho
+    p(x, 27, 9, 3, 4, belly);
+    p(x, 28, 10, 1, 1, D);
+    // Boca / dentes
+    p(x, 23, 12, 6, 1, D);
+    p(x, 24, 12, 1, 1, COL.white); p(x, 27, 12, 1, 1, COL.white);
+    // Braço e garra
+    p(x, 19, 16, 4, 5, G);
+    p(x, 18, 19, 2, 2, bone);
+    // Pernas (anima)
+    if (frame === 1) {
+      p(x, 6, 23, 5, 4, GD); p(x, 14, 24, 5, 3, GD);
+    } else {
+      p(x, 6, 24, 5, 3, GD); p(x, 14, 23, 5, 4, GD);
+    }
+    p(x, 6, 26, 5, 1, bone); p(x, 14, 26, 5, 1, bone);
+    return c;
+  }
+
+  /* ---------- Princesa 14x24 ---------- */
+  function princess() {
+    var c = cv(14, 24), x = ctxOf(c);
+    var pink = '#ff7bc0', pinkD = '#d24e98', hair = '#ffd86b', hairD = '#e0b53f', sk = COL.skin, Y = COL.yellow, W = COL.white, D = COL.dark;
+    // Coroa
+    p(x, 3, 1, 2, 2, Y); p(x, 6, 1, 2, 2, Y); p(x, 9, 1, 2, 2, Y);
+    p(x, 3, 3, 8, 2, Y);
+    p(x, 6, 3, 2, 1, '#ff4d6d'); // joia
+    // Cabelo
+    p(x, 3, 5, 8, 4, hair);
+    p(x, 2, 7, 2, 8, hair); p(x, 10, 7, 2, 8, hair);
+    p(x, 2, 13, 2, 2, hairD); p(x, 10, 13, 2, 2, hairD);
+    // Rosto
+    p(x, 4, 6, 6, 3, sk);
+    p(x, 5, 7, 1, 1, D); p(x, 8, 7, 1, 1, D);
+    p(x, 6, 9, 2, 1, '#e06aa0');
+    // Vestido
+    p(x, 4, 10, 6, 2, pink);
+    p(x, 3, 12, 8, 6, pink);
+    p(x, 2, 16, 10, 4, pink);
+    p(x, 3, 13, 6, 1, W);
+    p(x, 2, 19, 10, 1, pinkD);
+    // Mãos
+    p(x, 2, 12, 2, 2, sk); p(x, 10, 12, 2, 2, sk);
+    // Pés
+    p(x, 4, 20, 2, 2, '#a33'); p(x, 8, 20, 2, 2, '#a33');
+    return c;
+  }
+
   /* ---------- Inicialização: pré-renderiza tudo ---------- */
   var Sprites = {
     TILE: TILE,
@@ -392,6 +463,8 @@
       this.img.goombaFlat = goombaFlat();
       this.img.koopa = [koopa(0), koopa(1)];
       this.img.koopaShell = koopaShell();
+      this.img.boss = [boss(0), boss(1)];
+      this.img.princess = princess();
       this.img.coin = [coin(7), coin(5), coin(2), coin(5)];
       this.img.mushroom = mushroom();
       this.img.fireFlower = fireFlower();

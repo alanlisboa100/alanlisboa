@@ -77,6 +77,11 @@
     for (var r = 3; r < FLOOR; r++) this.set(c, r, T.POLE);
     this.set(c, FLOOR, T.STONE);
   };
+  B.floorStone = function (c0, c1) { for (var c = c0; c <= c1; c++) { this.set(c, FLOOR, T.STONE); this.set(c, FLOOR + 1, T.STONE); } };
+  B.wall = function (c) { for (var r = 0; r <= FLOOR + 1; r++) this.set(c, r, T.STONE); };
+  B.bossArena = function () { this.hasBoss = true; this.flagCol = this.cols + 99; };
+  B.boss = function (c, hp) { this.bossArena(); this.spawns.push({ kind: 'boss', x: c * 16, y: (FLOOR) * 16 - 26, hp: hp || 3 }); };
+  B.princess = function (c) { this.hasPrincess = true; this.spawns.push({ kind: 'princess', x: c * 16, y: (FLOOR) * 16 - 22 }); };
   B.cloud = function (c, r) { this.decor.push({ kind: 'cloud', x: c * 16, y: r * 16 }); };
   B.hill = function (c, r) { this.decor.push({ kind: 'hill', x: c * 16, y: r * 16 }); };
   B.bush = function (c, r) { this.decor.push({ kind: 'bush', x: c * 16, y: r * 16 }); };
@@ -255,7 +260,184 @@
     return b.finalize();
   }
 
-  var BUILDERS = [level1, level2, level3];
+  /* ============== FASE 1-4 (noite) ============== */
+  function level4() {
+    var b = new Builder(200, { name: '1-4', time: 380, theme: 'night' });
+    b.floor(0, 52); b.floor(56, 104); b.floor(108, 150); b.floor(154, 199);
+    scatterDecor(b);
+
+    b.qpow(9, 9);
+    b.bricks(14, 18, 9); b.coinRow(14, 18, 7); b.qcoin(16, 9);
+    b.goomba(24, FLOOR); b.koopa(30, FLOOR); b.goomba(36, FLOOR);
+    b.pipe(42, 3);
+    // buraco 53-55
+    b.coinArc(57, FLOOR - 2, 5);
+    b.goomba(64, FLOOR); b.goomba(66, FLOOR);
+    b.bricks(72, 76, 9); b.qpow(74, 9); b.coinRow(72, 76, 7);
+    b.koopa(82, FLOOR); b.goomba(88, FLOOR);
+    b.pipe(94, 4);
+    // buraco 105-107
+    b.qstar(112, 9);
+    b.bricks(116, 120, 8); b.coinRow(116, 120, 6);
+    b.goomba(124, FLOOR); b.koopa(130, FLOOR); b.goomba(134, FLOOR);
+    b.pipe(140, 3);
+    // buraco 151-153
+    b.bricks(158, 164, 9); b.coinRow(158, 164, 7); b.qcoin(161, 9);
+    b.koopa(170, FLOOR);
+    b.stairs(178, 4, 1); b.stairs(182, 4, -1);
+    b.flag(192);
+    return b.finalize();
+  }
+
+  /* ============== FASE CASTELO 1 (chefe) ============== */
+  function level5() {
+    var b = new Builder(56, { name: 'CASTELO 1', time: 300, theme: 'castle' });
+    b.floorStone(0, 55);
+    b.wall(0); b.wall(55);
+    // plataformas para desviar do fogo
+    b.block(14, 17, 9, 9, T.STONE);
+    b.block(30, 33, 7, 7, T.STONE);
+    b.coinRow(14, 17, 7);
+    b.qpow(8, 9);          // power-up de ajuda
+    b.boss(40, 3);         // CHEFE: 3 de vida
+    return b.finalize();
+  }
+
+  /* ============== FASE 2-1 ============== */
+  function level6() {
+    var b = new Builder(210, { name: '2-1', time: 400, theme: 'day' });
+    b.floor(0, 60); b.floor(64, 120); b.floor(124, 170); b.floor(174, 209);
+    scatterDecor(b);
+
+    b.qpow(8, 9);
+    b.goomba(16, FLOOR); b.goomba(17, FLOOR);
+    b.pipe(24, 2); b.pipe(32, 3); b.pipe(40, 4);
+    b.koopa(48, FLOOR); b.goomba(54, FLOOR);
+    // buraco 61-63
+    b.bricks(66, 72, 9); b.qpow(69, 9); b.coinRow(66, 72, 7);
+    b.goomba(78, FLOOR); b.koopa(84, FLOOR); b.goomba(90, FLOOR); b.goomba(91, FLOOR);
+    b.qstar(96, 9);
+    b.bricks(100, 104, 8); b.coinRow(100, 104, 6);
+    b.block(110, 113, 10, 10, T.STONE);
+    // buraco 121-123
+    b.coinArc(125, FLOOR - 2, 6);
+    b.koopa(132, FLOOR); b.goomba(138, FLOOR);
+    b.pipe(144, 3); b.pipe(152, 4);
+    b.goomba(162, FLOOR);
+    // buraco 171-173
+    b.bricks(178, 184, 9); b.coinRow(178, 184, 7);
+    b.stairs(190, 5, 1); b.stairs(195, 5, -1);
+    b.flag(204);
+    return b.finalize();
+  }
+
+  /* ============== FASE 2-2 (caverna) ============== */
+  function level7() {
+    var b = new Builder(200, { name: '2-2', time: 360, theme: 'cave' });
+    b.floor(0, 30); b.floor(34, 70); b.floor(74, 130); b.floor(134, 170); b.floor(174, 199);
+
+    b.qpow(6, 9);
+    b.koopa(12, FLOOR); b.goomba(16, FLOOR);
+    b.bricks(20, 24, 9); b.coinRow(20, 24, 7); b.qcoin(22, 9);
+    // buraco 31-33
+    b.goomba(38, FLOOR); b.goomba(40, FLOOR);
+    b.block(46, 48, 10, 10, T.STONE); b.coin(46, 8); b.coin(48, 8);
+    b.block(54, 56, 8, 8, T.STONE); b.qcoin(55, 6);
+    b.koopa(62, FLOOR);
+    // buraco 71-73
+    b.bricks(78, 86, 9); b.qpow(80, 9); b.coinBrick(84, 9); b.coinRow(78, 86, 7);
+    b.goomba(78, 9); b.koopa(84, 9);
+    b.goomba(92, FLOOR); b.goomba(93, FLOOR); b.koopa(100, FLOOR);
+    b.pipe(106, 3); b.pipe(114, 4);
+    b.qstar(122, 9);
+    // buraco 131-133
+    b.bricks(138, 144, 8); b.coinRow(138, 144, 6);
+    b.koopa(150, FLOOR); b.goomba(156, FLOOR);
+    // buraco 171-173
+    b.stairs(178, 4, 1); b.stairs(182, 4, -1);
+    b.flag(192);
+    return b.finalize();
+  }
+
+  /* ============== FASE 2-3 (entardecer) ============== */
+  function level8() {
+    var b = new Builder(215, { name: '2-3', time: 360, theme: 'dusk' });
+    b.floor(0, 40); b.floor(44, 58); b.floor(62, 110); b.floor(114, 160); b.floor(164, 214);
+    scatterDecor(b);
+
+    b.qpow(8, 9);
+    b.goomba(16, FLOOR); b.koopa(22, FLOOR); b.goomba(28, FLOOR);
+    b.pipe(34, 4);
+    // buraco 41-43
+    b.coinArc(45, FLOOR - 2, 5);
+    b.koopa(50, FLOOR); b.goomba(54, FLOOR);
+    b.qstar(56, 9);
+    // buraco 59-61
+    b.bricks(66, 72, 9); b.qpow(69, 9); b.coinRow(66, 72, 7);
+    b.goomba(78, FLOOR); b.goomba(79, FLOOR); b.koopa(86, FLOOR); b.goomba(92, FLOOR);
+    b.pipe(98, 3); b.pipe(106, 2);
+    // buraco 111-113
+    b.bricks(118, 124, 8); b.coinRow(118, 124, 6);
+    b.koopa(130, FLOOR); b.goomba(136, FLOOR); b.goomba(137, FLOOR);
+    b.block(142, 145, 10, 10, T.STONE);
+    b.pipe(150, 4);
+    // buraco 161-163
+    b.coinArc(165, FLOOR - 2, 6);
+    b.koopa(172, FLOOR); b.goomba(178, FLOOR);
+    b.bricks(184, 190, 9); b.coinRow(184, 190, 7);
+    b.stairs(196, 5, 1); b.stairs(201, 5, -1);
+    b.flag(210);
+    return b.finalize();
+  }
+
+  /* ============== FASE 2-4 (noite, difícil) ============== */
+  function level9() {
+    var b = new Builder(220, { name: '2-4', time: 340, theme: 'night' });
+    b.floor(0, 26); b.floor(30, 42); b.floor(46, 62); b.floor(66, 112); b.floor(116, 158); b.floor(162, 219);
+    scatterDecor(b);
+
+    b.qpow(6, 9);
+    b.koopa(12, FLOOR); b.goomba(16, FLOOR); b.goomba(17, FLOOR);
+    // ilha 30-42
+    b.block(32, 34, 10, 10, T.STONE); b.coinRow(32, 34, 8);
+    b.goomba(38, FLOOR);
+    // ilha 46-62
+    b.qstar(50, 9);
+    b.koopa(54, FLOOR); b.goomba(58, FLOOR);
+    // buraco 63-65
+    b.bricks(70, 80, 9); b.qpow(72, 9); b.coinBrick(76, 9); b.coinRow(70, 80, 7);
+    b.goomba(70, 9); b.koopa(76, 9); b.goomba(80, 9);
+    b.goomba(88, FLOOR); b.goomba(89, FLOOR); b.koopa(98, FLOOR);
+    b.pipe(104, 4);
+    // buraco 113-115
+    b.bricks(120, 126, 8); b.coinRow(120, 126, 6);
+    b.koopa(132, FLOOR); b.goomba(138, FLOOR); b.goomba(139, FLOOR);
+    b.pipe(144, 3); b.pipe(152, 4);
+    // buraco 159-161
+    b.coinArc(163, FLOOR - 2, 6);
+    b.koopa(170, FLOOR); b.goomba(176, FLOOR); b.goomba(177, FLOOR);
+    b.bricks(184, 190, 9); b.qpow(187, 9); b.coinRow(184, 190, 7);
+    b.stairs(198, 5, 1); b.stairs(203, 5, -1);
+    b.flag(212);
+    return b.finalize();
+  }
+
+  /* ============== FASE CASTELO FINAL (chefe + princesa) ============== */
+  function level10() {
+    var b = new Builder(64, { name: 'CASTELO FINAL', time: 350, theme: 'castle' });
+    b.floorStone(0, 63);
+    b.wall(0); b.wall(63);
+    b.block(12, 15, 9, 9, T.STONE);
+    b.block(24, 27, 7, 7, T.STONE);
+    b.block(40, 43, 9, 9, T.STONE);
+    b.coinRow(24, 27, 5);
+    b.qpow(7, 9); b.qpow(9, 9);   // ajuda (cogumelo/flor)
+    b.boss(46, 5);                // CHEFE FINAL: 5 de vida
+    b.princess(58);               // resgate ao derrotar o chefe
+    return b.finalize();
+  }
+
+  var BUILDERS = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10];
 
   window.Levels = {
     T: T, SOLID: SOLID, ROWS: ROWS, FLOOR: FLOOR,

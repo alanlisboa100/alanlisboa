@@ -267,7 +267,7 @@
       var arr = game.entities;
       for (var i = 0; i < arr.length; i++) {
         var o = arr[i];
-        if (o !== this && o.type === 'enemy' && !o.remove && !o.dead && this.intersects(o)) {
+        if (o !== this && o.type === 'enemy' && o.kind !== 'boss' && !o.remove && !o.dead && this.intersects(o)) {
           if (o.die) o.die(game); else { o.dead = true; o.vy = -4; o.vx = this.vx > 0 ? 1 : -1; }
           window.Sfx.kick(); game.addScore(200, o.x, o.y);
         }
@@ -383,7 +383,9 @@
     for (var i = 0; i < arr.length; i++) {
       var o = arr[i];
       if (o.type === 'enemy' && !o.remove && !o.dead && this.hits(o)) {
-        if (o.die) o.die(game); else { o.dead = true; o.vy = -4; }
+        if (o.kind === 'boss') { o.hurt(game); }
+        else if (o.die) { o.die(game); }
+        else { o.dead = true; o.vy = -4; }
         window.Sfx.kick(); game.addScore(200, o.x, o.y); this.boom(game); return;
       }
     }
@@ -400,6 +402,110 @@
     ctx.beginPath();
     ctx.arc(this.x + 3, this.y + 3, 3, 0, Math.PI * 2);
     ctx.fill();
+  };
+
+  /* ===================================================== */
+  /* CHEFE (BOSS)                                          */
+  /* ===================================================== */
+  function Boss(x, y, hp) {
+    this.type = 'enemy'; this.kind = 'boss';
+    this.x = x; this.y = y; this.w = 26; this.h = 26;
+    this.vx = -0.7; this.vy = 0;
+    this.hp = hp || 3; this.maxHp = this.hp;
+    this.invuln = 0; this.onGround = false;
+    this.anim = 0; this.dead = false; this.remove = false; this.defeated = false;
+    this.jumpTimer = 70 + Math.floor(Math.random() * 60);
+    this.fireTimer = 90 + Math.floor(Math.random() * 60);
+    this.dieTimer = 0;
+  }
+  Boss.prototype.update = function (game) {
+    if (this.defeated) {
+      this.dieTimer++; this.vy += GRAVITY; this.y += this.vy; this.x += this.vx * 0.3;
+      if (this.dieTimer > 70) this.remove = true;
+      return;
+    }
+    if (this.invuln > 0) this.invuln--;
+    var p = game.player;
+
+    this.hitWallLeft = this.hitWallRight = false;
+    moveAndCollide(this, game);
+    if (this.hitWallLeft) this.vx = Math.abs(this.vx) || 0.7;
+    if (this.hitWallRight) this.vx = -(Math.abs(this.vx) || 0.7);
+
+    if (this.onGround) {
+      // segue o jogador de vez em quando, e não cai das bordas
+      if (Math.random() < 0.012) this.vx = (p.x < this.x ? -1 : 1) * (0.6 + Math.random() * 0.6);
+      if (game.edgeAhead(this)) this.vx = -this.vx;
+      // pulo periódico
+      this.jumpTimer--;
+      if (this.jumpTimer <= 0) { this.vy = -7; this.jumpTimer = 80 + Math.floor(Math.random() * 80); }
+    }
+    // ataque de fogo
+    this.fireTimer--;
+    if (this.fireTimer <= 0) {
+      var dir = p.x < this.x ? -1 : 1;
+      game.spawn(new BossFire(dir > 0 ? this.x + this.w : this.x - 8, this.y + 6, dir));
+      window.Sfx.kick();
+      this.fireTimer = 100 + Math.floor(Math.random() * 70);
+    }
+    this.anim += Math.abs(this.vx) * 0.1 + 0.03;
+  };
+  Boss.prototype.hurt = function (game) {
+    if (this.invuln > 0 || this.defeated) return;
+    this.hp--; this.invuln = 70; window.Sfx.powerdown();
+    game.spawn(new Particle(this.x + this.w / 2, this.y + 6, '#fff1c0', 8));
+    if (this.hp <= 0) this.defeat(game);
+  };
+  Boss.prototype.defeat = function (game) {
+    this.defeated = true; this.dead = true;
+    this.vy = -6; this.vx = (game.player.x < this.x ? 1.6 : -1.6);
+    window.Sfx.die(); game.addScore(5000, this.x, this.y);
+    game.spawn(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#ffd23f', 16));
+    game.spawn(new Particle(this.x + this.w / 2, this.y + this.h / 2, '#ff5a3c', 10));
+  };
+  Boss.prototype.stompedBy = function (player, game) { this.hurt(game); };
+  Boss.prototype.draw = function (ctx) {
+    if (this.invuln > 0 && Math.floor(this.invuln / 4) % 2 === 0 && !this.defeated) return; // pisca
+    var img = window.Sprites.img.boss[Math.floor(this.anim) % 2];
+    if (this.defeated) {
+      ctx.save(); ctx.translate(this.x - 2, this.y + this.h); ctx.scale(1, -1); ctx.drawImage(img, 0, 0); ctx.restore(); return;
+    }
+    drawImg(ctx, img, this.x - 2, this.y - (img.height - this.h), this.vx < 0);
+  };
+
+  /* ===================================================== */
+  /* PROJÉTIL DO CHEFE (perigo)                            */
+  /* ===================================================== */
+  function BossFire(x, y, dir) {
+    this.type = 'hazard'; this.x = x; this.y = y; this.w = 8; this.h = 8;
+    this.vx = dir * 2.4; this.vy = -1.4; this.remove = false; this.life = 220; this.anim = 0;
+  }
+  BossFire.prototype.update = function (game) {
+    this.life--; if (this.life <= 0) { this.remove = true; return; }
+    this.vy += 0.2; if (this.vy > 4) this.vy = 4;
+    this.x += this.vx; this.y += this.vy;
+    var col = Math.floor((this.x + this.w / 2) / TILE), row = Math.floor((this.y + this.h) / TILE);
+    if (game.isSolid(col, row, this)) { this.y = row * TILE - this.h; this.vy = -3; } // quica no chão
+    var cam = game.camera.x;
+    if (this.x < cam - 60 || this.x > cam + window.VIEW.W + 60) this.remove = true;
+    this.anim += 0.3;
+  };
+  BossFire.prototype.draw = function (ctx) {
+    ctx.fillStyle = (Math.floor(this.anim) % 2 === 0) ? '#ff5a3c' : '#ffd23f';
+    ctx.beginPath(); ctx.arc(this.x + 4, this.y + 4, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffe9a0'; ctx.fillRect(this.x + 2, this.y + 2, 2, 2);
+  };
+
+  /* ===================================================== */
+  /* PRINCESA                                              */
+  /* ===================================================== */
+  function Princess(x, y) {
+    this.type = 'princess'; this.x = x; this.y = y; this.w = 12; this.h = 22;
+    this.baseY = y; this.anim = Math.random() * 6; this.remove = false;
+  }
+  Princess.prototype.update = function () { this.anim += 0.08; this.y = this.baseY + Math.sin(this.anim) * 1.5; };
+  Princess.prototype.draw = function (ctx) {
+    drawImg(ctx, window.Sprites.img.princess, this.x - 1, this.y - (window.Sprites.img.princess.height - this.h));
   };
 
   /* ===================================================== */
@@ -438,6 +544,7 @@
   window.Entities = {
     Player: Player, Goomba: Goomba, Koopa: Koopa, Coin: Coin,
     PowerUp: PowerUp, Fireball: Fireball, Particle: Particle, ScorePop: ScorePop,
+    Boss: Boss, BossFire: BossFire, Princess: Princess,
     moveAndCollide: moveAndCollide, drawImg: drawImg, TILE: TILE, GRAVITY: GRAVITY
   };
 })();

@@ -76,6 +76,8 @@
       this.timeAcc = 0;
       this.clearTimer = 0;
       this.deathTimer = 0;
+      this.clearMode = null;
+      this.boss = null; this.princess = null; this.bossDefeated = false;
       // cria entidades a partir do mapa
       var s = this.level.spawns, k;
       for (k = 0; k < s.length; k++) {
@@ -83,6 +85,8 @@
         if (d.kind === 'goomba') this.entities.push(new E.Goomba(d.x, d.y));
         else if (d.kind === 'koopa') this.entities.push(new E.Koopa(d.x, d.y));
         else if (d.kind === 'coin') this.entities.push(new E.Coin(d.x, d.y));
+        else if (d.kind === 'boss') { this.boss = new E.Boss(d.x, d.y, d.hp); this.entities.push(this.boss); }
+        else if (d.kind === 'princess') { this.princess = new E.Princess(d.x, d.y); this.entities.push(this.princess); }
       }
       this.state = 'playing';
       this.updateHUD();
@@ -112,7 +116,7 @@
     win: function () {
       this.state = 'win';
       window.Sfx.stopMusic(); window.Sfx.win();
-      this.showOverlay('VOCÊ VENCEU!', 'Parabéns! Você zerou o jogo com ' + this.score + ' pontos!', 'JOGAR DE NOVO');
+      this.showOverlay('VOCÊ VENCEU!', 'Você derrotou o chefe e salvou a princesa! Pontuação: ' + this.score, 'JOGAR DE NOVO');
     },
 
     togglePause: function () {
@@ -246,6 +250,15 @@
       // remove entidades mortas
       for (i = arr.length - 1; i >= 0; i--) if (arr[i].remove) arr.splice(i, 1);
 
+      // chefe derrotado?
+      if (this.level.hasBoss && this.boss && this.boss.remove && !this.bossDefeated) {
+        this.bossDefeated = true;
+        // limpa projéteis do chefe que ficaram no ar
+        for (i = arr.length - 1; i >= 0; i--) if (arr[i].type === 'hazard') arr.splice(i, 1);
+        if (this.level.hasPrincess) { window.Sfx.win(); } // a princesa agora pode ser resgatada
+        else { this.beginBossClear(); }
+      }
+
       // chegou na bandeira?
       if (!this.player.finished && !this.player.dying && this.player.x + this.player.w >= this.level.flagCol * TILE) {
         this.beginFlag();
@@ -279,13 +292,25 @@
 
         if (e.type === 'coin') { e.collect(this); continue; }
         if (e.type === 'powerup') { if (e.emerge <= 0) e.apply(p, this); continue; }
+        if (e.type === 'hazard') { p.hit(this); continue; }
+        if (e.type === 'princess') { if (this.bossDefeated) this.rescuePrincess(); continue; }
         if (e.type !== 'enemy') continue;
         if (e.dead) continue;
 
-        // estrela mata tudo
+        // estrela mata tudo (no chefe, causa dano)
         if (p.starTime > 0) {
-          if (e.die) e.die(this); else { e.dead = true; e.vy = -4; }
+          if (e.kind === 'boss') e.hurt(this);
+          else if (e.die) e.die(this);
+          else { e.dead = true; e.vy = -4; }
           window.Sfx.kick(); this.addScore(200, e.x, e.y);
+          continue;
+        }
+
+        // chefe: pisar causa dano; encostar de lado machuca (com graça pós-dano)
+        if (e.kind === 'boss') {
+          var stB = p.vy > 0 && (p.y + p.h - p.vy) <= e.y + e.h * 0.5;
+          if (stB) { e.stompedBy(p, this); p.stomp(); }
+          else if (e.invuln <= 0) p.hit(this);
           continue;
         }
 
@@ -315,6 +340,7 @@
 
     beginFlag: function () {
       this.state = 'clear';
+      this.clearMode = 'flag';
       this.player.finished = true;
       this.player.vx = 0; this.player.vy = 2;
       this.player.x = this.level.flagCol * TILE - this.player.w + 2;
@@ -323,23 +349,55 @@
       window.Sfx.flag();
     },
 
+    beginBossClear: function () {
+      this.state = 'clear';
+      this.clearMode = 'boss';
+      this.player.finished = true;
+      this.player.vx = 0;
+      this.clearTimer = 0;
+      window.Sfx.flag();
+    },
+
+    rescuePrincess: function () {
+      if (this.state === 'clear' || this.state === 'win') return;
+      this.state = 'clear';
+      this.clearMode = 'princess';
+      this.player.finished = true;
+      this.player.vx = 0;
+      this.clearTimer = 0;
+      window.Sfx.win();
+    },
+
     updateClear: function () {
       this.clearTimer++;
       var p = this.player, floorY = window.Levels.FLOOR * TILE - p.h;
+
+      if (this.clearMode === 'boss') {
+        if (this.time > 0 && this.clearTimer > 60) {
+          var decB = Math.min(this.time, 6);
+          this.time -= decB; this.score += decB * 50;
+        } else if (this.clearTimer > 80 && this.time <= 0) {
+          this.nextLevel();
+        }
+        return;
+      }
+      if (this.clearMode === 'princess') {
+        if (this.clearTimer > 160) this.win();
+        return;
+      }
+
+      // ---- bandeira ----
       if (this.clearTimer < 60) {
-        // desliza pelo mastro
         if (p.y < floorY) { p.y += 3; if (p.y > floorY) p.y = floorY; }
       } else if (this.clearTimer < 140) {
-        // caminha em direção ao castelo
         p.dir = 1; p.x += 1.1;
         p.anim += 0.2; p.frame = (Math.floor(p.anim) % 2 === 0) ? 'walk1' : 'walk2';
       } else if (this.time > 0) {
-        // converte tempo em pontos
         var dec = Math.min(this.time, 6);
         this.time -= dec; this.score += dec * 50;
         window.Sfx.tone ? window.Sfx.tone(1200, 0.03, 'square', 0.2) : 0;
       } else {
-        if (this.clearTimer % 1 === 0 && this.clearTimer > 160) this.nextLevel();
+        if (this.clearTimer > 160) this.nextLevel();
       }
     },
 
@@ -414,15 +472,48 @@
         ctx.fillStyle = 'rgba(255,255,255,' + (this.flashTimer / 16) + ')';
         ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       }
+
+      // barra de vida do chefe
+      if (L.hasBoss && this.boss && !this.bossDefeated && !this.boss.defeated) {
+        var n = this.boss.maxHp, bw = 10, total = n * bw;
+        var bx = Math.round(VIEW_W / 2 - total / 2), by = 26;
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillRect(bx - 8, by - 14, total + 16, 24);
+        ctx.fillStyle = '#fff'; ctx.font = '8px monospace'; ctx.textAlign = 'center';
+        ctx.fillText('CHEFE', VIEW_W / 2, by - 5);
+        for (var hh = 0; hh < n; hh++) {
+          ctx.fillStyle = hh < this.boss.hp ? '#e23636' : '#4a4a4a';
+          ctx.fillRect(bx + hh * bw + 1, by, bw - 2, 6);
+        }
+        ctx.textAlign = 'left';
+      }
+
+      // mensagem ao resgatar / derrotar chefe
+      if (this.state === 'clear' && this.clearMode === 'princess') {
+        ctx.fillStyle = '#fff'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
+        ctx.fillText('OBRIGADA, HEROI!', VIEW_W / 2, 40);
+        ctx.textAlign = 'left';
+      }
     },
 
     drawSky: function (ctx) {
       var theme = this.level.theme;
       var g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
       if (theme === 'dusk') { g.addColorStop(0, '#3a2a6b'); g.addColorStop(1, '#b65a8e'); }
+      else if (theme === 'night') { g.addColorStop(0, '#070726'); g.addColorStop(1, '#1d1d5a'); }
+      else if (theme === 'cave') { g.addColorStop(0, '#140f0a'); g.addColorStop(1, '#33251a'); }
+      else if (theme === 'castle') { g.addColorStop(0, '#1a0d12'); g.addColorStop(1, '#3a1422'); }
       else { g.addColorStop(0, '#5c94fc'); g.addColorStop(1, '#9bd0ff'); }
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      // lua à noite
+      if (theme === 'night') {
+        ctx.fillStyle = '#fdf6c8';
+        ctx.beginPath(); ctx.arc(VIEW_W - 64, 46, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.8;
+        ctx.fillRect(40, 30, 2, 2); ctx.fillRect(120, 50, 2, 2); ctx.fillRect(200, 24, 2, 2);
+        ctx.fillRect(300, 60, 2, 2); ctx.fillRect(360, 36, 2, 2); ctx.globalAlpha = 1;
+      }
     },
 
     drawTile: function (ctx, t, c, r, cam) {
